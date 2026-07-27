@@ -1,8 +1,19 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
+
+## [1.3.1] — 2026-07-27
+
+### Added
+
+- Every champion in the roster links to the page where their skins begin.
+
+### Fixed
+
+- The contents plaques on the cover were wide enough to touch the ornamental
+  frame. They are now a fixed width and centred, clear of the border.
 
 ## [1.3.0] — 2026-07-27
 
@@ -96,6 +107,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.3.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.1
 [1.3.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.0
 [1.2.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.2.0
 [1.1.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.1.0

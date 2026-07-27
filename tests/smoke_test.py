@@ -216,6 +216,39 @@ def test_collection_sections():
               os.path.getsize(plain) > 0 and os.path.getsize(full) > 0)
 
 
+def test_internal_links():
+    print("clickable navigation")
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        print("  skip  pypdf not installed")
+        return
+
+    skins = fake_skins(40)
+    counts = {}
+    for skin in skins:
+        counts[skin["rarity"]] = counts.get(skin["rarity"], 0) + 1
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "Skins.pdf")
+        pdf.build(skins, FAKE_PROFILE, counts, None, path,
+                  icons=fake_collectibles(20, "icon"),
+                  wards=fake_collectibles(8, "ward"))
+        reader = PdfReader(path)
+        pages = {reader.pages[i].indirect_reference.idnum: i + 1
+                 for i in range(len(reader.pages))}
+
+        cover = [a.get_object() for a in (reader.pages[0].get("/Annots") or [])]
+        roster = [a.get_object() for a in (reader.pages[1].get("/Annots") or [])]
+        champions = len({s["champion"] for s in skins})
+
+        check("cover links to every section", len(cover) == 4, len(cover))
+        check("roster links every champion", len(roster) == champions, len(roster))
+        targets = [pages.get(a["/Dest"][0].idnum) for a in cover + roster]
+        check("every link resolves to a real page", all(targets), targets[:4])
+        check("no link points at the cover itself", all(t > 1 for t in targets))
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -229,7 +262,8 @@ if __name__ == "__main__":
     for test in (test_imports, test_chroma_label, test_gems, test_outputs,
                  test_large_collection_fits, test_format_selection,
                  test_cache_freshness, test_year_grouping,
-                 test_collection_sections, test_english_only):
+                 test_collection_sections, test_internal_links,
+                 test_english_only):
         test()
 
     print()

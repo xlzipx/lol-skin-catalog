@@ -167,13 +167,16 @@ def _cover_contents(c, W, margin, top, entries):
     c.setFillColorRGB(*TEXT_DIM)
     tracked_text(c, W / 2, top - 1.2 * mm, "CONTENTS", theme.FONT, 6.5, 2.4, "center")
 
-    gap = 3 * mm
-    width = (W - 2 * margin - (len(entries) - 1) * gap) / len(entries)
+    # a fixed, narrower plaque keeps the row clear of the ornamental frame
+    gap = 4 * mm
+    width = 37 * mm
     height = 15 * mm
+    total = len(entries) * width + (len(entries) - 1) * gap
+    left = (W - total) / 2
     y = top - 6 * mm - height
 
     for i, (label, page, anchor) in enumerate(entries):
-        x = margin + i * (width + gap)
+        x = left + i * (width + gap)
         c.setFillColorRGB(*PANEL)
         c.roundRect(x, y, width, height, 1.2 * mm, fill=1, stroke=0)
         c.setStrokeColorRGB(*GOLD_DARK)
@@ -238,12 +241,14 @@ def _page_header(c, W, H, margin, name, page, total):
 # ------------------------------------------------------- champion roster ----
 
 
-def _roster(c, W, H, margin, skins, name, total_pages):
+def _roster(c, W, H, margin, skins, name, total_pages, champion_pages=None):
     """Every champion with the number of skins owned, in striped columns.
 
-    Rarity totals deliberately live on the cover only - repeating the gems
-    here would just duplicate the page before.
+    Each row links to the page where that champion's skins begin. Rarity totals
+    deliberately live on the cover only - repeating the gems here would just
+    duplicate the page before.
     """
+    champion_pages = champion_pages or {}
     _page_header(c, W, H, margin, name, 2, total_pages)
     c.bookmarkPage("section-roster")
     c.addOutlineEntry("Champion roster", "section-roster", 0)
@@ -258,8 +263,10 @@ def _roster(c, W, H, margin, skins, name, total_pages):
                  theme.FONT_DISPLAY_BOLD, 14, 2.6)
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 8.5)
-    c.drawString(margin, H - margin - 27.5 * mm,
-                 f"{len(names)} champions · {len(skins)} skins owned")
+    subtitle = f"{len(names)} champions · {len(skins)} skins owned"
+    if champion_pages:
+        subtitle += " · select a champion to jump to their skins"
+    c.drawString(margin, H - margin - 27.5 * mm, subtitle)
 
     y_rule = H - margin - 32 * mm
     c.setStrokeColorRGB(*GOLD_DARK)
@@ -289,6 +296,12 @@ def _roster(c, W, H, margin, skins, name, total_pages):
         c.setFillColorRGB(*GOLD)
         c.setFont(theme.FONT_BOLD, size)
         c.drawRightString(x + col_w - 5.5 * mm, y, str(counts[champion]))
+
+        page = champion_pages.get(champion)
+        if page:
+            c.linkAbsolute("", f"skins-page-{page}",
+                           (x, y - step * 0.32, x + col_w - 3 * mm,
+                            y - step * 0.32 + step), thickness=0)
     c.showPage()
 
 
@@ -450,13 +463,20 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
             contents.append((LAYOUT[kind]["label"], next_page, f"section-{kind}"))
             next_page += len(plans[kind])
 
+    # first page each champion appears on, so the roster can link to it
+    champion_pages = {}
+    for idx, skin in enumerate(skins):
+        champion_pages.setdefault(skin["champion"], 3 + idx // per_page)
+
     _cover(c, W, H, skins, profile, tier_counts, icon, contents)
-    _roster(c, W, H, margin, skins, name, total_pages)
+    _roster(c, W, H, margin, skins, name, total_pages, champion_pages)
 
     for idx, skin in enumerate(skins):
         slot = idx % per_page
         if slot == 0:
-            _page_header(c, W, H, margin, name, idx // per_page + 3, total_pages)
+            page_no = idx // per_page + 3
+            _page_header(c, W, H, margin, name, page_no, total_pages)
+            c.bookmarkPage(f"skins-page-{page_no}")
             if idx == 0:
                 c.bookmarkPage("section-skins")
                 c.addOutlineEntry("Skins", "section-skins", 0)
