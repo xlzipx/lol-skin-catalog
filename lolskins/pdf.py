@@ -198,8 +198,8 @@ def _cover_contents(c, W, margin, top, entries):
 
 
 def _footer(c, W, H, margin):
-    """Credit line at the very bottom of the last page, with a clickable link."""
-    y = margin + 13 * mm
+    """Credit line on the last page, sitting above the page number."""
+    y = margin + 22 * mm
     c.setStrokeColorRGB(*GOLD_DARK)
     c.setLineWidth(0.5)
     c.line(W / 2 - 42 * mm, y, W / 2 - 3 * mm, y)
@@ -221,35 +221,40 @@ def _footer(c, W, H, margin):
               relative=0, thickness=0)
 
 
-BACK_LINK_H = 9 * mm
+BACK_LINK_H = 12 * mm
+
+
+def _page_number(c, W, margin, page):
+    """Plain page number, centred at the foot of the page."""
+    y = margin + 3 * mm
+    c.setFillColorRGB(*GOLD)
+    c.setFont(theme.FONT_DISPLAY_BOLD, 9)
+    c.drawCentredString(W / 2, y, str(page))
 
 
 def _back_link(c, W, margin):
-    """Small link at the foot of a content page, back to the champion roster."""
+    """Return to the roster, tucked into the bottom right corner."""
     y = margin + 3 * mm
-    label = "CHAMPION ROSTER · PAGE 2"
-    size = 6.4
+    label = "BACK TO ROSTER"
+    size = 6.2
     width = sum(c.stringWidth(ch, theme.FONT, size) for ch in label) + 1.2 * (len(label) - 1)
-    x = W / 2 - width / 2
+    right = W - margin
+    x = right - width
 
-    diamond(c, x - 4 * mm, y + 0.8 * mm, 1.1 * mm, GOLD, filled=False)
-    diamond(c, x + width + 4 * mm, y + 0.8 * mm, 1.1 * mm, GOLD, filled=False)
+    diamond(c, x - 3.4 * mm, y + 0.7 * mm, 1.1 * mm, GOLD, filled=False)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, x, y, label, theme.FONT, size, 1.2)
 
     c.linkAbsolute("", "section-roster",
-                   (x - 6 * mm, y - 2 * mm, x + width + 6 * mm, y + 4 * mm),
+                   (x - 6 * mm, y - 2 * mm, right + 1 * mm, y + 4 * mm),
                    thickness=0)
 
 
 def _page_header(c, W, H, margin, name, page, total, section="COLLECTION"):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
-    tracked_text(c, margin, H - margin - 5 * mm,
-                 f"{name}'S {section}", theme.FONT_DISPLAY_BOLD, 10, 1.8)
-    c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 7.5)
-    c.drawRightString(W - margin, H - margin - 5 * mm, f"{page} / {total}")
+    tracked_text(c, W / 2, H - margin - 5 * mm,
+                 f"{name}'S {section}", theme.FONT_DISPLAY_BOLD, 10, 1.8, "center")
 
     y = H - margin - 9.5 * mm
     c.setStrokeColorRGB(*GOLD_DARK)
@@ -257,6 +262,7 @@ def _page_header(c, W, H, margin, name, page, total, section="COLLECTION"):
     c.line(margin, y, W / 2 - 3 * mm, y)
     c.line(W / 2 + 3 * mm, y, W - margin, y)
     diamond(c, W / 2, y, 1.4 * mm, GOLD, filled=False)
+    _page_number(c, W, margin, page)
 
 
 # ------------------------------------------------------- champion roster ----
@@ -280,14 +286,14 @@ def _roster(c, W, H, margin, skins, name, total_pages, champion_pages=None):
     names = sorted(counts, key=str.lower)
 
     c.setFillColorRGB(*TEXT)
-    tracked_text(c, margin, H - margin - 21 * mm, "SKINS BY CHAMPION",
-                 theme.FONT_DISPLAY_BOLD, 14, 2.6)
+    tracked_text(c, W / 2, H - margin - 21 * mm, "SKINS BY CHAMPION",
+                 theme.FONT_DISPLAY_BOLD, 14, 2.6, "center")
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 8.5)
     subtitle = f"{len(names)} champions · {len(skins)} skins owned"
     if champion_pages:
         subtitle += " · select a champion to jump to their skins"
-    c.drawString(margin, H - margin - 27.5 * mm, subtitle)
+    c.drawCentredString(W / 2, H - margin - 27.5 * mm, subtitle)
 
     y_rule = H - margin - 32 * mm
     c.setStrokeColorRGB(*GOLD_DARK)
@@ -381,12 +387,12 @@ def _draw_collection(c, W, H, margin, kind, items, plan, name, first_page,
             c.bookmarkPage(f"section-{kind}")
             c.addOutlineEntry(setup["label"].title(), f"section-{kind}", 0)
             c.setFillColorRGB(*TEXT)
-            tracked_text(c, margin, top - 5 * mm, setup["label"],
-                         theme.FONT_DISPLAY_BOLD, 14, 2.6)
+            tracked_text(c, W / 2, top - 5 * mm, setup["label"],
+                         theme.FONT_DISPLAY_BOLD, 14, 2.6, "center")
             c.setFillColorRGB(*TEXT_DIM)
             c.setFont(theme.FONT, 8.5)
-            c.drawString(margin, top - 11 * mm,
-                         f"{len(items)} owned · newest first")
+            c.drawCentredString(W / 2, top - 11 * mm,
+                                f"{len(items)} owned · newest first")
             c.setStrokeColorRGB(*GOLD_DARK)
             c.setLineWidth(0.5)
             c.line(margin, top - 14.5 * mm, W - margin, top - 14.5 * mm)

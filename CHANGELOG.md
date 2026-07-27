@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] — 2026-07-27
+
+### Changed
+
+- Page numbers moved from the top right corner to the foot of the page, plain
+  and centred.
+- The link back to the roster now sits in the bottom right corner and simply
+  reads "back to roster".
+- Page headers and section titles are centred.
+- The backdrop is a plain vertical fade again; the light streaks are gone. It
+  is drawn as vector bands rather than an embedded image, which also trims the
+  executable back down.
+
 ## [1.5.0] — 2026-07-27
 
 ### Fixed
@@ -157,6 +170,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.5.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.1
 [1.5.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.0
 [1.4.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.1
 [1.4.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.0
