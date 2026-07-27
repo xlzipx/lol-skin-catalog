@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] — 2026-07-27
+
+### Changed
+
+- The running page header names the section it belongs to — champion roster,
+  skins collection, icons collection, wards collection — rather than reading
+  "collection" on every page.
+
 ## [1.4.0] — 2026-07-27
 
 ### Added
@@ -127,6 +135,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.4.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.1
 [1.4.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.0
 [1.3.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.1
 [1.3.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.0

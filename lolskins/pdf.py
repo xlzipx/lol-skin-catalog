@@ -251,11 +251,11 @@ def _back_link(c, W, margin):
                    thickness=0)
 
 
-def _page_header(c, W, H, margin, name, page, total):
+def _page_header(c, W, H, margin, name, page, total, section="COLLECTION"):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, margin, H - margin - 5 * mm,
-                 f"{name}'S COLLECTION", theme.FONT_DISPLAY_BOLD, 10, 1.8)
+                 f"{name}'S {section}", theme.FONT_DISPLAY_BOLD, 10, 1.8)
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 7.5)
     c.drawRightString(W - margin, H - margin - 5 * mm, f"{page} / {total}")
@@ -279,7 +279,7 @@ def _roster(c, W, H, margin, skins, name, total_pages, champion_pages=None):
     duplicate the page before.
     """
     champion_pages = champion_pages or {}
-    _page_header(c, W, H, margin, name, 2, total_pages)
+    _page_header(c, W, H, margin, name, 2, total_pages, "CHAMPION ROSTER")
     c.bookmarkPage("section-roster")
     c.addOutlineEntry("Champion roster", "section-roster", 0)
 
@@ -339,8 +339,10 @@ def _roster(c, W, H, margin, skins, name, total_pages, champion_pages=None):
 
 # tile geometry per collectible kind
 LAYOUT = {
-    "icons": {"columns": 8, "label": "SUMMONER ICONS", "square": True},
-    "wards": {"columns": 6, "label": "WARD SKINS", "square": True},
+    "icons": {"columns": 8, "label": "SUMMONER ICONS",
+              "header": "ICONS COLLECTION", "square": True},
+    "wards": {"columns": 6, "label": "WARD SKINS",
+              "header": "WARDS COLLECTION", "square": True},
 }
 
 
@@ -379,7 +381,7 @@ def _draw_collection(c, W, H, margin, kind, items, plan, name, first_page,
 
     for offset, (start, count) in enumerate(plan):
         page_no = first_page + offset
-        _page_header(c, W, H, margin, name, page_no, total_pages)
+        _page_header(c, W, H, margin, name, page_no, total_pages, setup["header"])
         top = H - margin - 16 * mm
 
         if page_no != total_pages:
@@ -493,7 +495,8 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
         slot = idx % per_page
         if slot == 0:
             page_no = idx // per_page + 3
-            _page_header(c, W, H, margin, name, page_no, total_pages)
+            _page_header(c, W, H, margin, name, page_no, total_pages,
+                         "SKINS COLLECTION")
             c.bookmarkPage(f"skins-page-{page_no}")
             if page_no != total_pages:
                 _back_link(c, W, margin)
