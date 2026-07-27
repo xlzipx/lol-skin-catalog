@@ -179,22 +179,33 @@ def fake_collectibles(count, kind):
     ]
 
 
-def test_year_grouping():
-    print("acquisition grouping")
-    items = fake_collectibles(20, "icon")
-    grouped = pdf._group_by_year(items)
-    order = [year for year, _ in grouped]
-    check("newest year first", order[0] == "2026", order)
-    check("undated goes last", order[-1] == "UNDATED", order)
-    check("nothing is lost", sum(len(g) for _, g in grouped) == len(items))
-
-    plan = pdf._plan_year_grid(items, columns=8, cell_h=26, header_h=13,
-                               available_h=250)
+def test_grid_planning():
+    print("collectible pagination")
+    plan = pdf._plan_grid(266, columns=8, cell_h=23, first_page_h=230,
+                          other_page_h=250)
     check("plan produces pages", len(plan) >= 1, len(plan))
-    placed = sum(len(row) for page in plan for kind, row, _ in page if kind == "row")
-    check("every item is placed", placed == len(items), placed)
-    check("no page starts with a stranded heading",
-          all(page[0][0] == "header" for page in plan))
+    check("every item is placed", sum(n for _, n in plan) == 266)
+    check("pages run back to back",
+          all(plan[i][0] + plan[i][1] == plan[i + 1][0]
+              for i in range(len(plan) - 1)))
+    check("first page holds fewer, to make room for the title",
+          plan[0][1] <= plan[1][1] if len(plan) > 1 else True)
+
+    single = pdf._plan_grid(4, columns=8, cell_h=23, first_page_h=230,
+                            other_page_h=250)
+    check("a short section fits one page", len(single) == 1, len(single))
+    check("an empty section still returns a page",
+          len(pdf._plan_grid(0, 8, 23, 230, 250)) == 1)
+
+
+def test_date_order():
+    print("acquisition order")
+    items = fake_collectibles(12, "icon")
+    items.sort(key=lambda x: x["purchaseDate"], reverse=True)
+    dated = [i["purchaseDate"] for i in items if i["purchaseDate"]]
+    check("newest first", dated == sorted(dated, reverse=True))
+    check("undated items sit at the end",
+          all(i["purchaseDate"] for i in items[:len(dated)]))
 
 
 def test_collection_sections():
@@ -248,6 +259,17 @@ def test_internal_links():
         check("every link resolves to a real page", all(targets), targets[:4])
         check("no link points at the cover itself", all(t > 1 for t in targets))
 
+        # every content page but the last offers a way back to the roster
+        back = []
+        for i in range(2, len(reader.pages)):
+            annots = [a.get_object() for a in (reader.pages[i].get("/Annots") or [])]
+            if any(pages.get(a["/Dest"][0].idnum) == 2 for a in annots if "/Dest" in a):
+                back.append(i + 1)
+        check("content pages link back to the roster",
+              len(back) == len(reader.pages) - 3, (len(back), len(reader.pages)))
+        check("the last page carries the credit instead",
+              len(reader.pages) not in back)
+
 
 def test_english_only():
     print("no leftover translation layer")
@@ -261,7 +283,7 @@ def test_english_only():
 if __name__ == "__main__":
     for test in (test_imports, test_chroma_label, test_gems, test_outputs,
                  test_large_collection_fits, test_format_selection,
-                 test_cache_freshness, test_year_grouping,
+                 test_cache_freshness, test_grid_planning, test_date_order,
                  test_collection_sections, test_internal_links,
                  test_english_only):
         test()

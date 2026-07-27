@@ -4,6 +4,26 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-07-27
+
+### Added
+
+- Every content page except the last carries a small link at the foot back to
+  the champion roster, so a reader twenty pages deep can get back in one click.
+
+### Changed
+
+- Summoner icons and ward skins now run as one continuous grid ordered by
+  acquisition date, newest first, instead of being split under a heading for
+  every year. Each section opens with its own title and count. On a test
+  account this took the catalog from 30 pages to 26.
+
+### Fixed
+
+- The contents plaques on the cover showed a bare figure, which read as a
+  count next to the collection totals surrounding it. Each one now says
+  "PAGE 3" so it cannot be mistaken for "3 skins".
+
 ## [1.3.1] — 2026-07-27
 
 ### Added
@@ -107,6 +127,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.4.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.0
 [1.3.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.1
 [1.3.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.0
 [1.2.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.2.0

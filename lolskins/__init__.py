@@ -3,5 +3,5 @@ LoL Skin Catalog - exports the skins you own in League of Legends
 into a PDF catalog, an Excel sheet and a CSV list.
 """
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 __all__ = ["assets", "client", "paths", "pdf", "sheet", "theme"]

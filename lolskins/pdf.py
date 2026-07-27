@@ -186,9 +186,18 @@ def _cover_contents(c, W, margin, top, entries):
         c.setFillColorRGB(*TEXT_DIM)
         tracked_text(c, x + width / 2, y + height - 5.5 * mm, label.upper(),
                      theme.FONT, 6, 1.0, "center")
+
+        # "PAGE 3", not "3" - every other number on this cover is a count,
+        # so a bare figure here reads as one
+        number = str(page)
+        word_w = c.stringWidth("PAGE", theme.FONT, 6) + 1.0 * 3
+        number_w = c.stringWidth(number, theme.FONT_DISPLAY_BOLD, 13)
+        start = x + width / 2 - (word_w + 1.6 * mm + number_w) / 2
+        c.setFillColorRGB(*TEXT_DIM)
+        tracked_text(c, start, y + 3.9 * mm, "PAGE", theme.FONT, 6, 1.0)
         c.setFillColorRGB(*GOLD)
         c.setFont(theme.FONT_DISPLAY_BOLD, 13)
-        c.drawCentredString(x + width / 2, y + 3.6 * mm, str(page))
+        c.drawString(start + word_w + 1.6 * mm, y + 3.6 * mm, number)
 
         if anchor:
             c.linkAbsolute("", anchor, (x, y, x + width, y + height), thickness=0)
@@ -219,6 +228,27 @@ def _footer(c, W, H, margin):
     c.linkURL(PROJECT_URL,
               (W / 2 - width / 2, y - 12.5 * mm, W / 2 + width / 2, y - 9.5 * mm),
               relative=0, thickness=0)
+
+
+BACK_LINK_H = 9 * mm
+
+
+def _back_link(c, W, margin):
+    """Small link at the foot of a content page, back to the champion roster."""
+    y = margin + 3 * mm
+    label = "CHAMPION ROSTER · PAGE 2"
+    size = 6.4
+    width = sum(c.stringWidth(ch, theme.FONT, size) for ch in label) + 1.2 * (len(label) - 1)
+    x = W / 2 - width / 2
+
+    diamond(c, x - 4 * mm, y + 0.8 * mm, 1.1 * mm, GOLD, filled=False)
+    diamond(c, x + width + 4 * mm, y + 0.8 * mm, 1.1 * mm, GOLD, filled=False)
+    c.setFillColorRGB(*GOLD)
+    tracked_text(c, x, y, label, theme.FONT, size, 1.2)
+
+    c.linkAbsolute("", "section-roster",
+                   (x - 6 * mm, y - 2 * mm, x + width + 6 * mm, y + 4 * mm),
+                   thickness=0)
 
 
 def _page_header(c, W, H, margin, name, page, total):
@@ -314,96 +344,84 @@ LAYOUT = {
 }
 
 
-def _group_by_year(items):
-    """Newest year first; anything without a purchase date goes last."""
-    groups = {}
-    for item in items:
-        groups.setdefault(item.get("year") or "UNDATED", []).append(item)
-    years = sorted((y for y in groups if y != "UNDATED"), reverse=True)
-    if "UNDATED" in groups:
-        years.append("UNDATED")
-    return [(year, groups[year]) for year in years]
-
-
-def _plan_year_grid(items, columns, cell_h, header_h, available_h):
-    """Splits year groups into pages. Returns a list of pages of blocks.
-
-    Done before anything is drawn so the cover can print real page numbers.
-    """
-    pages, page, used = [], [], 0.0
-    for year, group in _group_by_year(items):
-        rows = [group[i:i + columns] for i in range(0, len(group), columns)]
-        # never leave a heading stranded at the bottom of a page
-        if page and used + header_h + cell_h > available_h:
-            pages.append(page)
-            page, used = [], 0.0
-        page.append(("header", year, used))
-        used += header_h
-        for row in rows:
-            if used + cell_h > available_h:
-                pages.append(page)
-                page, used = [], 0.0
-                page.append(("header", year + " (continued)", used))
-                used += header_h
-            page.append(("row", row, used))
-            used += cell_h
-    if page:
-        pages.append(page)
-    return pages
-
-
-def _draw_collection(c, W, H, margin, kind, plan, name, first_page, total_pages,
-                     footer=False):
-    """Renders the planned pages for one collectible kind."""
-    setup = LAYOUT[kind]
-    columns = setup["columns"]
-    header_h = 13 * mm
+def _geometry(W, margin, kind):
+    """Tile size and row pitch for one collectible kind."""
+    columns = LAYOUT[kind]["columns"]
     col_w = (W - 2 * margin) / columns
     tile = col_w - 4 * mm
-    cell_h = tile + 7 * mm
-    top = H - margin - 16 * mm
+    return columns, col_w, tile, tile + 4 * mm
 
-    for offset, blocks in enumerate(plan):
+
+def _plan_grid(count, columns, cell_h, first_page_h, other_page_h):
+    """Splits a flat, date-ordered run of tiles into pages.
+
+    Done before anything is drawn so the cover can print real page numbers.
+    Items simply follow one another newest first - no per-year headings, which
+    keeps the section a few pages shorter.
+    """
+    pages = []
+    placed = 0
+    while placed < count:
+        available = first_page_h if not pages else other_page_h
+        rows = max(1, int(available // cell_h))
+        take = min(count - placed, rows * columns)
+        pages.append((placed, take))
+        placed += take
+    return pages or [(0, 0)]
+
+
+def _draw_collection(c, W, H, margin, kind, items, plan, name, first_page,
+                     total_pages, footer=False):
+    """Renders the planned pages for one collectible kind."""
+    setup = LAYOUT[kind]
+    columns, col_w, tile, cell_h = _geometry(W, margin, kind)
+    title_h = 18 * mm
+
+    for offset, (start, count) in enumerate(plan):
         page_no = first_page + offset
         _page_header(c, W, H, margin, name, page_no, total_pages)
+        top = H - margin - 16 * mm
+
+        if page_no != total_pages:
+            _back_link(c, W, margin)
         if offset == 0:
             c.bookmarkPage(f"section-{kind}")
             c.addOutlineEntry(setup["label"].title(), f"section-{kind}", 0)
+            c.setFillColorRGB(*TEXT)
+            tracked_text(c, margin, top - 5 * mm, setup["label"],
+                         theme.FONT_DISPLAY_BOLD, 14, 2.6)
+            c.setFillColorRGB(*TEXT_DIM)
+            c.setFont(theme.FONT, 8.5)
+            c.drawString(margin, top - 11 * mm,
+                         f"{len(items)} owned · newest first")
+            c.setStrokeColorRGB(*GOLD_DARK)
+            c.setLineWidth(0.5)
+            c.line(margin, top - 14.5 * mm, W - margin, top - 14.5 * mm)
+            top -= title_h
 
-        for block in blocks:
-            if block[0] == "header":
-                _, year, used = block
-                y = top - used
-                label = "ACQUIRED " + year if year[:4].isdigit() else "NO ACQUISITION DATE"
-                if year.endswith("(continued)"):
-                    label = "ACQUIRED " + year
-                c.setFillColorRGB(*GOLD)
-                tracked_text(c, margin, y - 6 * mm, label,
-                             theme.FONT_DISPLAY_BOLD, 10, 2.0)
-                c.setStrokeColorRGB(*GOLD_DARK)
-                c.setLineWidth(0.4)
-                c.line(margin, y - 9 * mm, W - margin, y - 9 * mm)
-            else:
-                _, row, used = block
-                y = top - used
-                for i, item in enumerate(row):
-                    x = margin + i * col_w
-                    c.setFillColorRGB(*PANEL)
-                    c.roundRect(x, y - tile, tile, tile, 1 * mm, fill=1, stroke=0)
-                    if item.get("thumb") and os.path.exists(item["thumb"]):
-                        with Image.open(item["thumb"]) as im:
-                            ratio = im.height / im.width
-                        # fit inside the square tile and centre what is left over
-                        if ratio > 1:
-                            h, w = tile, tile / ratio
-                        else:
-                            w, h = tile, tile * ratio
-                        c.drawImage(item["thumb"],
-                                    x + (tile - w) / 2, y - tile + (tile - h) / 2,
-                                    width=w, height=h, mask="auto")
-                    c.setStrokeColorRGB(*GOLD_DARK)
-                    c.setLineWidth(0.4)
-                    c.rect(x, y - tile, tile, tile, fill=0, stroke=1)
+        for i in range(count):
+            item = items[start + i]
+            col, row = i % columns, i // columns
+            x = margin + col * col_w
+            y = top - row * cell_h
+
+            c.setFillColorRGB(*PANEL)
+            c.roundRect(x, y - tile, tile, tile, 1 * mm, fill=1, stroke=0)
+            if item.get("thumb") and os.path.exists(item["thumb"]):
+                with Image.open(item["thumb"]) as im:
+                    ratio = im.height / im.width
+                # fit inside the square tile and centre what is left over
+                if ratio > 1:
+                    h, w = tile, tile / ratio
+                else:
+                    w, h = tile, tile * ratio
+                c.drawImage(item["thumb"],
+                            x + (tile - w) / 2, y - tile + (tile - h) / 2,
+                            width=w, height=h, mask="auto")
+            c.setStrokeColorRGB(*GOLD_DARK)
+            c.setLineWidth(0.4)
+            c.rect(x, y - tile, tile, tile, fill=0, stroke=1)
+
         if footer and offset == len(plan) - 1:
             _footer(c, W, H, margin)
         c.showPage()
@@ -442,16 +460,16 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
     # Plan the collectible sections before drawing anything, so the cover can
     # print the page each section really starts on.
     plans = {}
-    for kind, items in (("icons", icons or []), ("wards", wards or [])):
+    collections = {"icons": icons or [], "wards": wards or []}
+    # the foot of every page but the last carries the back link, so the grid
+    # has to stop short of it
+    body_h = H - margin - 16 * mm - margin - BACK_LINK_H
+    for kind, items in collections.items():
         if not items:
             continue
-        setup = LAYOUT[kind]
-        col_w = (W - 2 * margin) / setup["columns"]
-        tile = col_w - 4 * mm
-        plans[kind] = _plan_year_grid(
-            items, setup["columns"], tile + 7 * mm, 13 * mm,
-            H - margin - 16 * mm - margin,
-        )
+        columns, _, _, cell_h = _geometry(W, margin, kind)
+        plans[kind] = _plan_grid(len(items), columns, cell_h,
+                                 body_h - 18 * mm, body_h)
 
     total_pages = grid_pages + 2 + sum(len(p) for p in plans.values())
 
@@ -477,6 +495,8 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
             page_no = idx // per_page + 3
             _page_header(c, W, H, margin, name, page_no, total_pages)
             c.bookmarkPage(f"skins-page-{page_no}")
+            if page_no != total_pages:
+                _back_link(c, W, margin)
             if idx == 0:
                 c.bookmarkPage("section-skins")
                 c.addOutlineEntry("Skins", "section-skins", 0)
@@ -534,8 +554,8 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
         if kind not in plans:
             continue
         last = kind == ("wards" if "wards" in plans else "icons")
-        _draw_collection(c, W, H, margin, kind, plans[kind], name,
-                         page_no, total_pages, footer=last)
+        _draw_collection(c, W, H, margin, kind, collections[kind], plans[kind],
+                         name, page_no, total_pages, footer=last)
         page_no += len(plans[kind])
 
     c.save()
