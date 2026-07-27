@@ -1,8 +1,9 @@
 # LoL Skin Catalog
 
-Exports every League of Legends skin **you own** into a printable PDF catalog,
-an Excel sheet with thumbnails and a plain CSV list — sorted alphabetically,
-with splash art, rarity tiers and chroma counts.
+Exports the League of Legends collection **you own** into a printable PDF
+catalog: every skin with its splash art, rarity tier and chroma count, followed
+by your summoner icons and ward skins ordered by when you acquired them. Skins
+also go out as an Excel sheet with thumbnails and a plain CSV list.
 
 ---
 
@@ -105,13 +106,14 @@ purchase date and the free default ward.
 
 ### 3. Fetching the artwork
 
-Splash art and rarity tiers come from
-[Community Dragon](https://communitydragon.org), a public community mirror of
-the game's asset files. These are ordinary HTTPS downloads of public images —
-no account, no login, no tokens.
+Splash art, icon and ward images, their names and the rarity tiers all come
+from [Community Dragon](https://communitydragon.org), a public community mirror
+of the game's asset files. These are ordinary HTTPS downloads of public images
+— no account, no login, no tokens.
 
-Rarity has to come from there because the client's inventory endpoint returns
-an empty rarity field.
+The inventory endpoints hand back nothing but item ids, so the names and
+pictures for icons and wards are matched up from there, and rarity has to come
+from there too because the client's own field for it comes back empty.
 
 ### 4. Building the documents
 
@@ -147,6 +149,9 @@ convenient, not because anyone promised it is blessed.
   Mythic, Legendary, Epic. `Rare` is the old 975 RP tier, which the client's own
   summary no longer displays — this catalog still lists it.
 - **Chromas** are counted only on real skins, matching the client's own tally.
+- **Icons and wards** are counted the way the client counts them, which includes
+  a few starter icons carrying no purchase date and the free default ward. They
+  are ordered newest acquisition first; anything undated sorts to the end.
 
 ## Project layout
 
