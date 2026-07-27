@@ -155,16 +155,17 @@ def main(argv=None):
     print("  DONE")
     print(RULE + "\n")
     print("Created:")
+    width = max((len(os.path.basename(p)) for p in written), default=12) + 3
     for path in written:
         if os.path.isdir(path):
             count = len([f for f in os.listdir(path) if f.endswith(".jpg")])
-            print(f"  {os.path.basename(path) + '/':<14} {count} images")
+            print(f"  {os.path.basename(path) + '/':<{width}} {count} images")
         elif os.path.exists(path):
             name = os.path.basename(path)
-            print(f"  {name:<14} {os.path.getsize(path) / 1048576:.1f} MB")
+            print(f"  {name:<{width}} {os.path.getsize(path) / 1048576:.1f} MB")
 
-    catalog = os.path.join(out, "Skins.pdf")
-    if not args.no_open and "pdf" in formats and os.path.exists(catalog):
+    catalog = next((p for p in written if p.lower().endswith(".pdf")), None)
+    if not args.no_open and catalog and os.path.exists(catalog):
         try:
             os.startfile(catalog)  # noqa: S606
         except Exception:
@@ -202,15 +203,16 @@ def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
     if "pdf" in formats:
         icon = assets.fetch_profile_icon(profile.get("profileIconId"), out)
 
+    names = paths.output_names(profile)
     written = []
     if "csv" in formats:
         print("Writing CSV…")
-        path = os.path.join(out, "skins.csv")
+        path = os.path.join(out, names["csv"])
         sheet.write_csv(skins, path)
         written.append(path)
     if "xlsx" in formats:
         print("Writing XLSX…")
-        path = os.path.join(out, "Skins.xlsx")
+        path = os.path.join(out, names["xlsx"])
         sheet.write_xlsx(skins, profile, tier_counts, path)
         written.append(path)
     if "pdf" in formats:
@@ -222,7 +224,7 @@ def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
             wards = assets.download_collectibles(collectibles.get("wards", []),
                                                  "wards", out)
         print("Writing PDF…")
-        path = os.path.join(out, "Skins.pdf")
+        path = os.path.join(out, names["pdf"])
         pdf.build(skins, profile, tier_counts, icon, path, icons=icons, wards=wards)
         written.append(path)
     if keep_full:

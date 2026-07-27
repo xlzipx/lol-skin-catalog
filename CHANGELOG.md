@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] — 2026-07-27
+
+### Changed
+
+- Exports carry the summoner's name: `ZIPEEK - LoL Collection.pdf`,
+  `ZIPEEK - LoL Skins.xlsx`, `ZIPEEK - LoL Skins.csv`. Two accounts exported
+  into the same folder no longer overwrite one another.
+- A name styled as spaced-out letters ("Z I P E E K") is collapsed for both the
+  file name and the page headers, while a genuine two-word name keeps its
+  space. Characters a file system rejects are stripped, and a missing name
+  falls back to "Summoner".
+
 ## [1.6.0] — 2026-07-27
 
 ### Added
@@ -188,6 +200,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.7.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.7.0
 [1.6.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.6.0
 [1.5.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.1
 [1.5.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.0

@@ -2,7 +2,6 @@
 
 import math
 import os
-import re
 from datetime import date
 
 from PIL import Image
@@ -10,7 +9,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import theme
+from . import paths, theme
 from .theme import (
     BACKGROUND, GOLD, GOLD_DARK, PANEL, ROW_ODD, TEXT, TEXT_DIM, TIERS,
     TIER_COLOR, circular_image, diamond, draw_gem, page_background, page_frame,
@@ -33,9 +32,9 @@ def _display_name(profile):
 
 
 def _header_name(profile):
-    """The in-game name can be spaced out ('Z I P E E K'); collapse it for headings
-    so it does not fight with the tracking applied to the heading itself."""
-    return re.sub(r"\s+", "", profile.get("gameName") or "SUMMONER").upper()
+    """Collapsed name for headings, so a stylised 'Z I P E E K' does not fight
+    with the letter spacing the heading applies on top."""
+    return (paths.display_name(profile) or "SUMMONER").upper()
 
 
 def _thumb_ratio(skins, default=SPLASH_RATIO):

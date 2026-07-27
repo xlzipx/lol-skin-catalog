@@ -1,4 +1,8 @@
 # --- generated output ---------------------------------------------------
+# exports carry the summoner's name, so match by extension
+*.pdf
+*.xlsx
+*.csv
 Skins.pdf
 Skins.xlsx
 skins.csv

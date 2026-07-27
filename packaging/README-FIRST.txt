@@ -29,12 +29,14 @@ HOW TO RUN
 WHAT YOU GET (next to the .exe)
 -----------------------------------------------------------
 
-  Skins.pdf     the catalog with pictures - the main thing
-  Skins.xlsx    filterable table with thumbnails
-  skins.csv     plain list, no images
-  splashes\     splash art as individual images
+  Files are named after your summoner, for example:
 
-  Skins.pdf and Skins.xlsx are self-contained - pictures are
+  NAME - LoL Collection.pdf   the catalog with pictures
+  NAME - LoL Skins.xlsx       filterable table with thumbnails
+  NAME - LoL Skins.csv        plain list, no images
+  splashes\                   splash art as individual images
+
+  The PDF and the spreadsheet are self-contained - pictures are
   inside the file, so you can forward either one.
 
   You only get what you asked for. Picking "PDF only" skips

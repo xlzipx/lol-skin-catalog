@@ -330,6 +330,27 @@ def test_nothing_falls_off_the_page():
         check("every image sits inside the page", not strays, strays[:4])
 
 
+def test_output_names():
+    print("file naming")
+    from lolskins import paths
+
+    check("stylised spacing collapses",
+          paths.display_name({"gameName": "Z I P E E K"}) == "ZIPEEK")
+    check("a real two-word name keeps its space",
+          paths.display_name({"gameName": "Faker Jr"}) == "Faker Jr")
+    check("a missing name falls back",
+          paths.output_names({})["pdf"].startswith("Summoner"))
+
+    names = paths.output_names({"gameName": "Z I P E E K"})
+    check("the player's name is in the file name",
+          all(v.startswith("ZIPEEK") for v in names.values()), names)
+    check("extensions are right",
+          names["pdf"].endswith(".pdf") and names["xlsx"].endswith(".xlsx")
+          and names["csv"].endswith(".csv"))
+    bad = paths.output_names({"gameName": 'we/ird:na*me'})["pdf"]
+    check("path separators are stripped", "/" not in bad and ":" not in bad, bad)
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -344,7 +365,8 @@ if __name__ == "__main__":
                  test_large_collection_fits, test_format_selection,
                  test_cache_freshness, test_grid_planning, test_date_order,
                  test_collection_sections, test_internal_links,
-                 test_nothing_falls_off_the_page, test_english_only):
+                 test_nothing_falls_off_the_page, test_output_names,
+                 test_english_only):
         test()
 
     print()

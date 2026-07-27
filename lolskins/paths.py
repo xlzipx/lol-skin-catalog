@@ -29,3 +29,25 @@ def thumb_dir(base=None):
 
 def safe_filename(text):
     return re.sub(r'[\\/:*?"<>|]', "_", text).strip()
+
+
+def display_name(profile):
+    """Readable summoner name.
+
+    Players often style their name as spaced-out letters ("Z I P E E K"); that
+    is collapsed, while a genuine two-word name keeps its space.
+    """
+    parts = ((profile or {}).get("gameName") or "").split()
+    if parts and all(len(p) == 1 for p in parts):
+        return "".join(parts)
+    return " ".join(parts)
+
+
+def output_names(profile):
+    """File names for one account, so exports from two accounts can coexist."""
+    stem = safe_filename(display_name(profile)) or "Summoner"
+    return {
+        "pdf": f"{stem} - LoL Collection.pdf",
+        "xlsx": f"{stem} - LoL Skins.xlsx",
+        "csv": f"{stem} - LoL Skins.csv",
+    }

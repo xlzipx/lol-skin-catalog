@@ -8,15 +8,18 @@ with splash art, rarity tiers and chroma counts.
 
 ## What you get
 
+Files carry your summoner name, so exports from two accounts sit side by side
+without overwriting each other.
+
 | File | Contents |
 |---|---|
-| `Skins.pdf` | Cover with your profile and a linked table of contents, a champion roster, every skin, then your summoner icons and ward skins |
-| `Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
-| `skins.csv` | Plain list, no images |
+| `<name> - LoL Collection.pdf` | Cover with your profile and a linked table of contents, a champion roster, every skin, then your summoner icons and ward skins |
+| `<name> - LoL Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
+| `<name> - LoL Skins.csv` | Plain list, no images |
 | `splashes/` | Splash art as individual JPEGs, 720 px wide |
 | `skins.json`, `profile.json` | Raw data pulled from the client |
 
-`Skins.pdf` and `Skins.xlsx` are self-contained — images and fonts live inside
+The PDF and the spreadsheet are self-contained — images and fonts live inside
 the file, so you can send either one to a friend and it opens anywhere.
 
 ## Requirements
