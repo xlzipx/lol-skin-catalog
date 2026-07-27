@@ -4,6 +4,24 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-07-27
+
+### Added
+
+- **Skin cards are dressed in their rarity.** Instead of a thin coloured
+  outline, each card now carries a wash rising out of its caption, an accent
+  bar along the foot, corner brackets around the art, a scrim blending the art
+  into the caption and a bright rule beneath the gem — all in the tier's
+  colour. Cards with no tier get the same treatment in a muted steel.
+
+### Changed
+
+- Page numbers are flanked by short gold rules, the way a printed book sets
+  them.
+- The back link opens with a drawn upward arrow instead of a diamond, so it
+  reads as a control rather than an ornament. The arrow is vector, not a
+  glyph, so no font has to carry it.
+
 ## [1.5.1] — 2026-07-27
 
 ### Changed
@@ -170,6 +188,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.6.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.6.0
 [1.5.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.1
 [1.5.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.0
 [1.4.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.1

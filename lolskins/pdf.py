@@ -225,11 +225,34 @@ BACK_LINK_H = 12 * mm
 
 
 def _page_number(c, W, margin, page):
-    """Plain page number, centred at the foot of the page."""
+    """Page number flanked by short rules, the way a printed book sets it."""
     y = margin + 3 * mm
+    label = str(page)
+    size = 9
     c.setFillColorRGB(*GOLD)
-    c.setFont(theme.FONT_DISPLAY_BOLD, 9)
-    c.drawCentredString(W / 2, y, str(page))
+    c.setFont(theme.FONT_DISPLAY_BOLD, size)
+    c.drawCentredString(W / 2, y, label)
+
+    half = c.stringWidth(label, theme.FONT_DISPLAY_BOLD, size) / 2
+    inner = half + 2.4 * mm
+    c.setStrokeColorRGB(*GOLD)
+    c.setLineWidth(0.6)
+    for direction in (-1, 1):
+        x = W / 2 + direction * inner
+        c.line(x, y + 1.1 * mm, x + direction * 4 * mm, y + 1.1 * mm)
+
+
+def _up_arrow(c, cx, cy, size):
+    """Small upward arrow, drawn rather than typed so no font has to have it."""
+    c.saveState()
+    c.setStrokeColorRGB(*GOLD)
+    c.setLineWidth(0.9)
+    c.setLineCap(1)
+    c.setLineJoin(1)
+    c.line(cx, cy - size * 0.85, cx, cy + size * 0.75)
+    c.line(cx - size * 0.72, cy + size * 0.05, cx, cy + size * 0.75)
+    c.line(cx, cy + size * 0.75, cx + size * 0.72, cy + size * 0.05)
+    c.restoreState()
 
 
 def _back_link(c, W, margin):
@@ -241,12 +264,12 @@ def _back_link(c, W, margin):
     right = W - margin
     x = right - width
 
-    diamond(c, x - 3.4 * mm, y + 0.7 * mm, 1.1 * mm, GOLD, filled=False)
+    _up_arrow(c, x - 3.6 * mm, y + 0.8 * mm, 1.5 * mm)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, x, y, label, theme.FONT, size, 1.2)
 
     c.linkAbsolute("", "section-roster",
-                   (x - 6 * mm, y - 2 * mm, right + 1 * mm, y + 4 * mm),
+                   (x - 7 * mm, y - 2 * mm, right + 1 * mm, y + 4 * mm),
                    thickness=0)
 
 
@@ -426,6 +449,87 @@ def _draw_collection(c, W, H, margin, kind, items, plan, name, first_page,
         c.showPage()
 
 
+# ------------------------------------------------------------- skin card ----
+
+NEUTRAL_ACCENT = (0.42, 0.45, 0.50)   # cards with no rarity tier
+
+
+def _tinted(base, accent, amount):
+    return tuple(b + (a - b) * amount for b, a in zip(base, accent))
+
+
+def _card_back(c, x, y_top, card_w, card_h, padding, img_h, tier):
+    """Panel, rarity wash and foot bar - everything that sits under the art."""
+    accent = TIER_COLOR.get(tier) or NEUTRAL_ACCENT
+    strength = 1.0 if tier else 0.45
+    bottom = y_top - card_h
+    caption_top = y_top - padding - img_h
+
+    c.setFillColorRGB(*PANEL)
+    c.roundRect(x, bottom, card_w, card_h, 1.2 * mm, fill=1, stroke=0)
+
+    # wash climbing out of the foot of the card into the caption
+    bands = 12
+    height = caption_top - bottom
+    for i in range(bands):
+        t = 1 - i / (bands - 1)
+        c.setFillColorRGB(*_tinted(PANEL, accent, 0.18 * strength * t ** 1.6))
+        c.rect(x + 0.5 * mm, bottom + i * height / bands + 0.4 * mm,
+               card_w - 1 * mm, height / bands + 0.5, fill=1, stroke=0)
+
+    # accent bar along the foot
+    c.saveState()
+    try:
+        c.setFillAlpha(0.9 if tier else 0.5)
+    except Exception:
+        pass
+    c.setFillColorRGB(*accent)
+    c.roundRect(x, bottom, card_w, 1.5 * mm, 0.75 * mm, fill=1, stroke=0)
+    c.restoreState()
+
+
+def _card_front(c, x, y_top, card_w, padding, img_w, img_h, tier):
+    """Scrim, frame and corner brackets - everything drawn over the art."""
+    accent = TIER_COLOR.get(tier) or NEUTRAL_ACCENT
+    strength = 1.0 if tier else 0.45
+    caption_top = y_top - padding - img_h
+    art_top = y_top - padding
+
+    # scrim so the art sinks into the caption instead of stopping dead
+    scrim = min(img_h * 0.24, 8 * mm)
+    steps = 22  # enough slices that the fade reads smooth, not striped
+    c.saveState()
+    try:
+        c.setFillColorRGB(*_tinted(PANEL, accent, 0.3 * strength))
+        for i in range(steps):
+            t = 1 - i / (steps - 1)
+            c.setFillAlpha(0.30 * t ** 1.6)
+            c.rect(x + padding, caption_top + i * scrim / steps,
+                   img_w, scrim / steps + 0.6, fill=1, stroke=0)
+    except Exception:
+        pass
+    c.restoreState()
+
+    # hairline between art and caption, brightest under the gem
+    c.setStrokeColorRGB(*_tinted(PANEL, accent, 0.55 * strength))
+    c.setLineWidth(0.5)
+    c.line(x + padding, caption_top, x + padding + img_w, caption_top)
+    c.setStrokeColorRGB(*accent)
+    c.setLineWidth(1.1)
+    c.line(x + padding, caption_top, x + padding + 7 * mm, caption_top)
+
+    c.setStrokeColorRGB(*accent)
+    c.setLineWidth(0.8 if tier else 0.5)
+    c.rect(x + padding, caption_top, img_w, img_h, fill=0, stroke=1)
+
+    arm = 3.6 * mm
+    c.setLineWidth(1.4 if tier else 0.9)
+    for side in (-1, 1):
+        cx = x + padding + (img_w if side > 0 else 0)
+        c.line(cx, art_top, cx - side * arm, art_top)
+        c.line(cx, art_top, cx, art_top - arm)
+
+
 # ------------------------------------------------------------------ grid ----
 
 
@@ -507,8 +611,8 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
         x = margin + col * (card_w + gap)
         y_top = H - margin - header_h - row * (card_h + gap)
 
-        c.setFillColorRGB(*PANEL)
-        c.roundRect(x, y_top - card_h, card_w, card_h, 1.2 * mm, fill=1, stroke=0)
+        tier = skin.get("rarity", "")
+        _card_back(c, x, y_top, card_w, card_h, padding, img_h, tier)
 
         if skin.get("thumb") and os.path.exists(skin["thumb"]):
             c.drawImage(skin["thumb"], x + padding, y_top - padding - img_h,
@@ -517,11 +621,7 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
             c.setFillColorRGB(0.09, 0.13, 0.20)
             c.rect(x + padding, y_top - padding - img_h, img_w, img_h, fill=1, stroke=0)
 
-        tier = skin.get("rarity", "")
-        border = TIER_COLOR.get(tier)
-        c.setStrokeColorRGB(*(border if border else GOLD_DARK))
-        c.setLineWidth(0.7 if border else 0.4)
-        c.rect(x + padding, y_top - padding - img_h, img_w, img_h, fill=0, stroke=1)
+        _card_front(c, x, y_top, card_w, padding, img_w, img_h, tier)
 
         y_text = y_top - padding - img_h - 4.4 * mm
         x_text = x + padding
