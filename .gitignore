@@ -1,0 +1,36 @@
+# --- generated output ---------------------------------------------------
+Skins.pdf
+Skins.xlsx
+skins.csv
+skins.json
+profile.json
+splashes/
+.thumbs/
+
+# personal data from older versions of this tool
+Skiny.pdf
+Skiny.xlsx
+skiny.csv
+skiny.json
+profil.json
+
+# --- build artefacts ----------------------------------------------------
+build/
+dist/
+*.spec
+icon.ico
+
+# --- python -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# --- editors / OS -------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
