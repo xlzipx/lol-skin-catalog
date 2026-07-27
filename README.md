@@ -13,7 +13,7 @@ with splash art, rarity tiers and chroma counts.
 | `Skins.pdf` | Cover with your profile, a champion roster, then a grid of every skin |
 | `Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
 | `skins.csv` | Plain list, no images |
-| `splashes/` | Splash art as individual JPEGs, 480 px wide |
+| `splashes/` | Splash art as individual JPEGs, 720 px wide |
 | `skins.json`, `profile.json` | Raw data pulled from the client |
 
 `Skins.pdf` and `Skins.xlsx` are self-contained — images and fonts live inside
@@ -44,13 +44,21 @@ Options:
 
 | Flag | Meaning |
 |---|---|
+| `--formats LIST` | What to produce: any of `pdf`, `xlsx`, `csv`, `splashes`, or `all` |
 | `--output DIR` | Write results somewhere else |
 | `--lockfile PATH` | Point at the client manually (only needed for odd installs) |
 | `--no-pause` | Do not wait for Enter when finished |
 | `--no-open` | Do not open the PDF when finished |
 
+Run without `--formats` in a terminal and it asks what you want: everything,
+PDF only, Excel only, or CSV only. Anything not asked for is not produced —
+choosing PDF only skips the `splashes/` folder entirely, and CSV only downloads
+no artwork at all, finishing in seconds.
+
 The first run downloads a few hundred images and takes a couple of minutes.
-Art is cached in `splashes/` and `.thumbs/`, so later runs finish in seconds.
+Art is cached in `splashes/` and `.thumbs/`, so later runs finish quickly. The
+cache is checked against the current resolution, so upgrading the tool
+refreshes older, smaller art by itself.
 
 ---
 

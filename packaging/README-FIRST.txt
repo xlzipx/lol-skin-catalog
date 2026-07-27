@@ -19,7 +19,10 @@ HOW TO RUN
 
   3. Double-click LoL-Skin-Catalog.exe
 
-  4. Wait. The first run takes a few minutes while the
+  4. It asks what you want. Press Enter for everything, or
+     pick just the PDF, just Excel, or just CSV.
+
+  5. Wait. The first run takes a few minutes while the
      artwork downloads. The PDF opens by itself when done.
 
 
@@ -33,6 +36,10 @@ WHAT YOU GET (next to the .exe)
 
   Skins.pdf and Skins.xlsx are self-contained - pictures are
   inside the file, so you can forward either one.
+
+  You only get what you asked for. Picking "PDF only" skips
+  the splashes folder, and "CSV only" downloads no pictures
+  at all and finishes in seconds.
 
 
 WINDOWS MAY WARN YOU

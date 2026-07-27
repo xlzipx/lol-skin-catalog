@@ -4,6 +4,23 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-07-27
+
+### Added
+
+- `--formats` picks what to produce: any of `pdf`, `xlsx`, `csv`, `splashes`,
+  or `all`. Run without it in a terminal and the program asks. Nothing you did
+  not ask for is written, so a PDF-only export skips the `splashes/` folder and
+  a CSV-only export downloads no artwork at all.
+
+### Changed
+
+- Splash art resolution raised: embedded art from 220 to 460 px (about 210 DPI
+  on a catalog card), the `splashes/` folder from 480 to 720 px. The PDF grows
+  from roughly 2.4 MB to 6.6 MB.
+- Cached art is now checked against the current resolution, so upgrading
+  refreshes older, smaller images instead of silently reusing them.
+
 ## [1.1.0] — 2026-07-27
 
 ### Changed
@@ -61,5 +78,6 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.2.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.2.0
 [1.1.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.1.0
 [1.0.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.0.0

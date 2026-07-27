@@ -17,8 +17,10 @@ CDRAGON = (
     "/rcp-be-lol-game-data/global/default"
 )
 
-SPLASH_WIDTH = 480   # what is kept in splashes/
-THUMB_WIDTH = 220    # what gets embedded into the PDF and XLSX
+SPLASH_WIDTH = 720   # what is kept in splashes/
+# What gets embedded into the PDF and XLSX. A catalog card is about 55 mm
+# wide, so 460 px lands at roughly 210 DPI - crisp in print and on screen.
+THUMB_WIDTH = 460
 
 
 def fetch_rarities(log=print):
@@ -51,17 +53,47 @@ def fetch_profile_icon(icon_id, base=None, log=print):
         return None
 
 
-def download_splashes(skins, base=None, log=print):
-    """Fills each skin with 'file' and 'thumb'. Already downloaded art is reused."""
-    splashes = splash_dir(base)
-    thumbs = thumb_dir(base)
+def _is_current(path, width):
+    """True when the cached file already has the width we want.
+
+    Checking the size means an upgrade that raises the resolution refreshes
+    old, smaller art instead of silently reusing it.
+    """
+    if not os.path.exists(path):
+        return False
+    try:
+        with Image.open(path) as im:
+            return im.width == width
+    except Exception:
+        return False
+
+
+def download_splashes(skins, base=None, log=print, keep_full=True, need_thumbs=True):
+    """Fills each skin with 'file' and 'thumb'. Already downloaded art is reused.
+
+    keep_full   also write the full-size art into splashes/
+    need_thumbs write the smaller copies the PDF and XLSX embed
+
+    With both switched off nothing is downloaded at all, which is what a
+    CSV-only export wants.
+    """
+    if not keep_full and not need_thumbs:
+        for skin in skins:
+            skin["file"] = skin["thumb"] = None
+        return
+
+    splashes = splash_dir(base) if keep_full else None
+    thumbs = thumb_dir(base) if need_thumbs else None
     session = requests.Session()
 
     for i, skin in enumerate(skins, 1):
         name = safe_filename(f"{skin['champion']} - {skin['skin']}") + ".jpg"
-        skin["file"] = os.path.join(splashes, name)
-        skin["thumb"] = os.path.join(thumbs, name)
-        if os.path.exists(skin["file"]) and os.path.exists(skin["thumb"]):
+        skin["file"] = os.path.join(splashes, name) if splashes else None
+        skin["thumb"] = os.path.join(thumbs, name) if thumbs else None
+
+        wanted = [(skin[key], width) for key, width in
+                  (("file", SPLASH_WIDTH), ("thumb", THUMB_WIDTH)) if skin[key]]
+        if all(_is_current(target, width) for target, width in wanted):
             continue
 
         path = skin.get("splashPath") or skin.get("tilePath")
@@ -77,7 +109,9 @@ def download_splashes(skins, base=None, log=print):
                 skin["file"] = skin["thumb"] = None
                 continue
             img = Image.open(io.BytesIO(r.content)).convert("RGB")
-            for target, width in ((skin["file"], SPLASH_WIDTH), (skin["thumb"], THUMB_WIDTH)):
+            for target, width in wanted:
+                if _is_current(target, width):
+                    continue
                 height = max(1, round(img.height * width / img.width))
                 img.resize((width, height), Image.LANCZOS).save(
                     target, "JPEG", quality=88

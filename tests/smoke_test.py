@@ -126,6 +126,44 @@ def test_large_collection_fits():
         check("PDF written", os.path.getsize(path) > 0)
 
 
+def test_format_selection():
+    print("format selection")
+    import main
+
+    check("no argument means everything",
+          main.parse_formats(None) == set(main.FORMATS))
+    check("'all' means everything", main.parse_formats("all") == set(main.FORMATS))
+    check("single format", main.parse_formats("pdf") == {"pdf"})
+    check("list of formats", main.parse_formats("pdf,csv") == {"pdf", "csv"})
+    check("case and spaces tolerated",
+          main.parse_formats(" PDF , XLSX ") == {"pdf", "xlsx"})
+
+    try:
+        main.parse_formats("pdf,doc")
+        check("unknown format rejected", False, "no error raised")
+    except ValueError:
+        check("unknown format rejected", True)
+
+    check("menu covers every entry",
+          all(set(f) <= set(main.FORMATS) for _, _, f in main.MENU))
+    check("CSV-only asks for no artwork",
+          not ({"pdf", "xlsx", "splashes"} & set(main.MENU[3][2])))
+
+
+def test_cache_freshness():
+    print("cache freshness")
+    from lolskins import assets
+
+    check("missing file is not current", not assets._is_current("nope.jpg", 460))
+    with tempfile.TemporaryDirectory() as tmp:
+        from PIL import Image as PILImage
+
+        path = os.path.join(tmp, "small.jpg")
+        PILImage.new("RGB", (220, 124)).save(path)
+        check("old, narrower art is refreshed", not assets._is_current(path, 460))
+        check("matching width is reused", assets._is_current(path, 220))
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -137,7 +175,8 @@ def test_english_only():
 
 if __name__ == "__main__":
     for test in (test_imports, test_chroma_label, test_gems, test_outputs,
-                 test_large_collection_fits, test_english_only):
+                 test_large_collection_fits, test_format_selection,
+                 test_cache_freshness, test_english_only):
         test()
 
     print()
