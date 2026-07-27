@@ -149,6 +149,13 @@ def test_format_selection():
     check("CSV-only asks for no artwork",
           not ({"pdf", "xlsx", "splashes"} & set(main.MENU[3][2])))
 
+    # the raw client dump is an output like any other, not a leftover
+    check("raw data is a format", "data" in main.FORMATS)
+    check("'all' includes the raw data", "data" in main.parse_formats("all"))
+    for i, (label, _, chosen) in enumerate(main.MENU):
+        if i:  # every entry but "Everything"
+            check(f"{label} leaves no raw data behind", "data" not in chosen)
+
 
 def test_cache_freshness():
     print("cache freshness")

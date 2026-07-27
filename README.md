@@ -18,7 +18,10 @@ without overwriting each other.
 | `<name> - LoL Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
 | `<name> - LoL Skins.csv` | Plain list, no images |
 | `splashes/` | Splash art as individual JPEGs, 720 px wide |
-| `skins.json`, `profile.json` | Raw data pulled from the client |
+| `skins.json`, `profile.json` | Raw data pulled from the client, written only if you ask for it |
+
+Nothing you did not ask for is written. Artwork is cached in `.thumbs/` so later
+runs are quick; `--clean` deletes that cache once the export is done.
 
 The PDF and the spreadsheet are self-contained — images and fonts live inside
 the file, so you can send either one to a friend and it opens anywhere.
@@ -48,7 +51,8 @@ Options:
 
 | Flag | Meaning |
 |---|---|
-| `--formats LIST` | What to produce: any of `pdf`, `xlsx`, `csv`, `splashes`, or `all` |
+| `--formats LIST` | What to produce: any of `pdf`, `xlsx`, `csv`, `splashes`, `data`, or `all` |
+| `--clean` | Delete the cached artwork once the export is written |
 | `--output DIR` | Write results somewhere else |
 | `--lockfile PATH` | Point at the client manually (only needed for odd installs) |
 | `--no-pause` | Do not wait for Enter when finished |

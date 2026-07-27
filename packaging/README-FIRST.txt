@@ -43,6 +43,10 @@ WHAT YOU GET (next to the .exe)
   the splashes folder, and "CSV only" downloads no pictures
   at all and finishes in seconds.
 
+  Pictures are kept in a ".thumbs" folder so a second run is
+  quick. If you would rather not leave it behind, run the
+  program from a command line with --clean.
+
 
 WINDOWS MAY WARN YOU
 -----------------------------------------------------------

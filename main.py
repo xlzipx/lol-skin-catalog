@@ -10,6 +10,7 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import sys
 import traceback
 
@@ -30,11 +31,11 @@ from lolskins import assets, client, paths, pdf, sheet  # noqa: E402
 
 RULE = "─" * 58
 
-FORMATS = ("pdf", "xlsx", "csv", "splashes")
+FORMATS = ("pdf", "xlsx", "csv", "splashes", "data")
 
 # what the interactive menu offers, in order
 MENU = [
-    ("Everything", "PDF, Excel, CSV and the splash art folder", FORMATS),
+    ("Everything", "PDF, Excel, CSV, splash art and the raw data", FORMATS),
     ("PDF only", "just the catalog", ("pdf",)),
     ("Excel only", "just the spreadsheet", ("xlsx",)),
     ("CSV only", "fastest, downloads no images at all", ("csv",)),
@@ -47,8 +48,10 @@ def parse_args(argv=None):
         description="Export the League of Legends skins you own into PDF, XLSX and CSV.",
     )
     p.add_argument("--formats", metavar="LIST",
-                   help="comma-separated: pdf, xlsx, csv, splashes, or all "
-                        "(default: ask, or all when not asked)")
+                   help="comma-separated: pdf, xlsx, csv, splashes, data, or "
+                        "all (default: ask, or all when not asked)")
+    p.add_argument("--clean", action="store_true",
+                   help="delete the cached artwork once the export is written")
     p.add_argument("--output", metavar="DIR", help="where to write the results")
     p.add_argument("--lockfile", metavar="PATH",
                    help="path to the client's lockfile (only for odd installs)")
@@ -135,7 +138,8 @@ def main(argv=None):
         print("Make sure the League client is running and you are logged in.")
         pause(wait, 1)
 
-    client.save(skins, profile, out)
+    if "data" in formats:
+        client.save(skins, profile, out)
 
     # ------------------------------------------------------------ step 2 --
     needs_art = bool(formats & {"pdf", "xlsx", "splashes"})
@@ -163,6 +167,14 @@ def main(argv=None):
         elif os.path.exists(path):
             name = os.path.basename(path)
             print(f"  {name:<{width}} {os.path.getsize(path) / 1048576:.1f} MB")
+
+    if args.clean:
+        cache = paths.thumb_dir(out)
+        if os.path.isdir(cache):
+            files = sum(len(f) for _, _, f in os.walk(cache))
+            shutil.rmtree(cache, ignore_errors=True)
+            print(f"\nCleaned the artwork cache ({files} files). The next run "
+                  "downloads it again.")
 
     catalog = next((p for p in written if p.lower().endswith(".pdf")), None)
     if not args.no_open and catalog and os.path.exists(catalog):
@@ -229,6 +241,8 @@ def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
         written.append(path)
     if keep_full:
         written.append(paths.splash_dir(out))
+    if "data" in formats:
+        written += [os.path.join(out, n) for n in ("skins.json", "profile.json")]
     return written
 
 

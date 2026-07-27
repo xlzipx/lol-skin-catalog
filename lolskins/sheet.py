@@ -12,7 +12,10 @@ from PIL import Image
 
 from .theme import TIERS, TIER_HEX
 
-IMAGE_WIDTH_PX = 200
+# The thumbnail is displayed at a fixed height, so a row is the same depth
+# whatever shape the art happens to be. Square tiles would otherwise make
+# rows nearly twice as tall as the old landscape crops did.
+IMAGE_HEIGHT_PX = 110
 COLUMNS = ["#", "Champion", "Skin", "Rarity", "Chromas", "Skin ID", "Splash art"]
 
 
@@ -46,7 +49,7 @@ def write_xlsx(skins, profile, tier_counts, path):
     ws.freeze_panes = "A2"
     ws.row_dimensions[1].height = 26
 
-    for width, letter in zip([5, 18, 34, 13, 9, 10, 34], "ABCDEFG"):
+    for width, letter in zip([5, 18, 34, 13, 9, 10, 22], "ABCDEFG"):
         ws.column_dimensions[letter].width = width
 
     for i, skin in enumerate(skins, 1):
@@ -75,12 +78,12 @@ def write_xlsx(skins, profile, tier_counts, path):
 
         if skin.get("thumb") and os.path.exists(skin["thumb"]):
             with Image.open(skin["thumb"]) as im:
-                ratio = im.height / im.width
+                ratio = im.width / im.height
             img = XLImage(skin["thumb"])
-            img.width = IMAGE_WIDTH_PX
-            img.height = round(IMAGE_WIDTH_PX * ratio)
+            img.height = IMAGE_HEIGHT_PX
+            img.width = round(IMAGE_HEIGHT_PX * ratio)
             ws.add_image(img, f"{get_column_letter(7)}{r}")
-            ws.row_dimensions[r].height = round(IMAGE_WIDTH_PX * ratio) * 0.78 + 6
+            ws.row_dimensions[r].height = IMAGE_HEIGHT_PX * 0.78 + 6
         else:
             ws.row_dimensions[r].height = 18
 

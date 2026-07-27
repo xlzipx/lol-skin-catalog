@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] — 2026-07-28
+
+Found while auditing what each export leaves on disk.
+
+### Fixed
+
+- `skins.json` and `profile.json` were written on every run regardless of the
+  format chosen, even though nothing reads them back — leftovers from when the
+  tool was two scripts. A CSV-only export now really does leave one CSV and
+  nothing else.
+- Excel rows were 162 points tall after skins went square, nearly twice their
+  old depth. The thumbnail is now sized by height, so a row is the same depth
+  whatever shape the art is.
+
+### Added
+
+- `data` is a format of its own: ask for it, or take `all`, and you get the raw
+  client dump. Otherwise it is not written.
+- `--clean` deletes the cached artwork once the export is finished, for anyone
+  who wants only the document and no working files left behind.
+
 ## [1.8.0] — 2026-07-27
 
 ### Changed
@@ -221,6 +242,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.9.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.9.0
 [1.8.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.8.0
 [1.7.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.7.0
 [1.6.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.6.0
