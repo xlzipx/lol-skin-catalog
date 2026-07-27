@@ -129,7 +129,7 @@ STRINGS = {
     "pdf_total_1": {"en": "TOTAL SKINS", "cs": "SKINŮ"},
     "pdf_total_2": {"en": "OWNED", "cs": "CELKEM"},
     "pdf_champions": {"en": "CHAMPIONS", "cs": "ŠAMPIONŮ"},
-    "pdf_chromas": {"en": "CHROMAS", "cs": "CHROMAT"},
+    "pdf_chromas": {"en": "CHROMAS", "cs": "CHROMAS"},
     "pdf_champs_owned": {"en": "CHAMPS OWNED", "cs": "ŠAMPIONŮ VLASTNĚNO"},
     "pdf_generated": {"en": "Generated {date}", "cs": "Vygenerováno {date}"},
     "pdf_header": {
@@ -143,12 +143,18 @@ STRINGS = {
         "cs": "PODLE ŠAMPIONA ({count})",
     },
     "pdf_no_tier": {"en": "No tier", "cs": "Bez tieru"},
+    "pdf_footer": {
+        "en": "Generated with LoL Skin Catalog — a free, open-source tool "
+              "for exporting the skins you own.",
+        "cs": "Vygenerováno nástrojem LoL Skin Catalog — volně dostupným "
+              "open-source programem pro export vlastněných skinů.",
+    },
     # ------------------------------------------------------ spreadsheet ----
     "col_index": {"en": "#", "cs": "#"},
     "col_champion": {"en": "Champion", "cs": "Šampion"},
     "col_skin": {"en": "Skin", "cs": "Skin"},
     "col_rarity": {"en": "Rarity", "cs": "Rarita"},
-    "col_chromas": {"en": "Chromas", "cs": "Chromy"},
+    "col_chromas": {"en": "Chromas", "cs": "Chromas"},
     "col_skin_id": {"en": "Skin ID", "cs": "ID skinu"},
     "col_splash": {"en": "Splash art", "cs": "Splash art"},
     "col_splash_file": {"en": "Splash file", "cs": "Soubor splashe"},
@@ -164,7 +170,7 @@ STRINGS = {
         "cs": "Šampionů se skinem",
     },
     "xls_champs_owned": {"en": "Champions owned", "cs": "Vlastněných šampionů"},
-    "xls_chromas_owned": {"en": "Chromas owned", "cs": "Vlastněných chromat"},
+    "xls_chromas_owned": {"en": "Chromas owned", "cs": "Chromas celkem"},
     "xls_export_date": {"en": "Export date", "cs": "Datum exportu"},
     "xls_no_tier": {"en": "No tier", "cs": "Bez tieru"},
 }
@@ -242,11 +248,9 @@ def t(key, **kwargs):
 
 
 def chromas(count):
-    """'1 chroma' / '6 chromas'; Czech has three plural forms."""
-    if _current == "cs":
-        if count == 1:
-            return "1 chroma"
-        if 2 <= count <= 4:
-            return f"{count} chromy"
-        return f"{count} chromat"
+    """'1 chroma' / '6 chromas'.
+
+    Czech keeps the same wording on purpose: players say "chroma" and
+    "chromas", and the declined Czech plural ("chromat") reads badly.
+    """
     return f"{count} chroma" if count == 1 else f"{count} chromas"

@@ -18,6 +18,7 @@ from .theme import (
 )
 
 SPLASH_RATIO = 717 / 1215
+PROJECT_URL = "https://github.com/xlzipx/lol-skin-catalog"
 
 
 def _display_name(profile):
@@ -147,6 +148,30 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
 # ----------------------------------------------------------- page chrome ----
 
 
+def _footer(c, W, H, margin):
+    """Credit line at the very bottom of the last page, with a clickable link."""
+    y = margin + 13 * mm
+    c.setStrokeColorRGB(*GOLD_DARK)
+    c.setLineWidth(0.5)
+    c.line(W / 2 - 42 * mm, y, W / 2 - 3 * mm, y)
+    c.line(W / 2 + 3 * mm, y, W / 2 + 42 * mm, y)
+    diamond(c, W / 2, y, 1.3 * mm, GOLD, filled=False)
+
+    c.setFillColorRGB(*TEXT_DIM)
+    c.setFont(theme.FONT, 6.6)
+    c.drawCentredString(W / 2, y - 6 * mm, i18n.t("pdf_footer"))
+
+    label = PROJECT_URL.replace("https://", "")
+    c.setFillColorRGB(*GOLD)
+    c.setFont(theme.FONT, 7.2)
+    c.drawCentredString(W / 2, y - 11 * mm, label)
+
+    width = c.stringWidth(label, theme.FONT, 7.2)
+    c.linkURL(PROJECT_URL,
+              (W / 2 - width / 2, y - 12.5 * mm, W / 2 + width / 2, y - 9.5 * mm),
+              relative=0, thickness=0)
+
+
 def _page_header(c, W, H, margin, name, page, total):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
@@ -171,68 +196,68 @@ def _summary(c, W, H, margin, skins, tier_counts, name, total_pages):
     _page_header(c, W, H, margin, name, 2, total_pages)
     c.setFillColorRGB(*TEXT)
     tracked_text(c, margin, H - margin - 20 * mm, i18n.t("pdf_summary"),
-                 theme.FONT_DISPLAY_BOLD, 12, 2.4)
+                 theme.FONT_DISPLAY_BOLD, 13, 2.4)
 
-    label_y = H - margin - 27 * mm
+    # ---- rarity band across the full width ----
     c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 7.5)
-    c.drawString(margin, label_y, i18n.t("pdf_by_rarity"))
+    c.setFont(theme.FONT, 8)
+    c.drawString(margin, H - margin - 29 * mm, i18n.t("pdf_by_rarity"))
 
-    # ---- rarity rows ----
-    row_h = 8.5 * mm
-    y = H - margin - 34 * mm
-    rarity_w = 46 * mm
-    rows = [(tier, tier_counts.get(tier, 0)) for tier in TIERS]
-    rows.append((None, tier_counts.get("", 0)))
+    y_gem = H - margin - 41 * mm
+    step_x = (W - 2 * margin) / len(TIERS)
+    x0 = margin + step_x / 2
+    for i, tier in enumerate(TIERS):
+        x = x0 + i * step_x
+        draw_gem(c, tier, x, y_gem, 4.4 * mm)
+        c.setFillColorRGB(*GOLD)
+        c.setFont(theme.FONT_DISPLAY_BOLD, 15)
+        c.drawCentredString(x, y_gem - 11.5 * mm, str(tier_counts.get(tier, 0)))
+        c.setFillColorRGB(*TEXT_DIM)
+        c.setFont(theme.FONT, 6.8)
+        c.drawCentredString(x, y_gem - 16.5 * mm, tier.upper())
 
-    for i, (tier, count) in enumerate(rows):
-        if i % 2 == 0:
-            c.setFillColorRGB(*ROW_ODD)
-            c.rect(margin - 1.5 * mm, y - row_h / 2 - 1.2 * mm,
-                   rarity_w + 3 * mm, row_h, fill=1, stroke=0)
-        if tier:
-            draw_gem(c, tier, margin + 3 * mm, y, 3.2 * mm)
-            c.setFillColorRGB(*TEXT)
-            c.setFont(theme.FONT_BOLD, 8.5)
-            c.drawString(margin + 9 * mm, y - 2.6, tier)
-            c.setFillColorRGB(*GOLD)
-        else:
-            c.setFillColorRGB(*TEXT_DIM)
-            c.setFont(theme.FONT, 8.5)
-            c.drawString(margin + 9 * mm, y - 2.6, i18n.t("pdf_no_tier"))
-        c.drawRightString(margin + rarity_w, y - 2.6, str(count))
-        y -= row_h
+    y_rule = y_gem - 22 * mm
+    c.setStrokeColorRGB(*GOLD_DARK)
+    c.setLineWidth(0.5)
+    c.line(margin, y_rule, W - margin, y_rule)
+    c.setFillColorRGB(*TEXT_DIM)
+    c.setFont(theme.FONT, 8)
+    c.drawRightString(W - margin, y_rule - 5.5 * mm,
+                      f"{i18n.t('pdf_no_tier')}: {tier_counts.get('', 0)}")
 
-    # ---- champion table, three striped columns ----
+    # ---- champion table, four striped columns over the full width ----
     counts = {}
     for skin in skins:
         counts[skin["champion"]] = counts.get(skin["champion"], 0) + 1
     names = sorted(counts, key=str.lower)
 
-    columns = 3
-    x_start = margin + 56 * mm
-    col_w = (W - margin - x_start) / columns
-    y_top = H - margin - 34 * mm
-
     c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 7.5)
-    c.drawString(x_start, label_y, i18n.t("pdf_by_champion", count=len(names)))
+    c.setFont(theme.FONT, 8)
+    c.drawString(margin, y_rule - 5.5 * mm, i18n.t("pdf_by_champion", count=len(names)))
+
+    columns = 4
+    col_w = (W - 2 * margin) / columns
+    y_top = y_rule - 13 * mm
+    bottom = margin + 4 * mm
 
     per_column = math.ceil(len(names) / columns)
-    step = min(6.2 * mm, (y_top - margin - 8 * mm) / max(1, per_column - 1))
+    step = min(7 * mm, (y_top - bottom) / max(1, per_column - 1))
+    # shrink the type only if a very large collection needs tighter rows
+    size = max(6.4, min(9.4, step / mm * 1.45))
 
     for i, champion in enumerate(names):
         col, row = divmod(i, per_column)
-        x = x_start + col * col_w
+        x = margin + col * col_w
         y = y_top - row * step
         if row % 2 == 0:
             c.setFillColorRGB(*ROW_ODD)
-            c.rect(x - 1.5 * mm, y - 1.9 * mm, col_w - 3 * mm, step, fill=1, stroke=0)
+            c.rect(x, y - step * 0.32, col_w - 3 * mm, step, fill=1, stroke=0)
         c.setFillColorRGB(*TEXT)
-        c.setFont(theme.FONT, 7.2)
-        c.drawString(x, y, champion)
+        c.setFont(theme.FONT, size)
+        c.drawString(x + 2 * mm, y, champion)
         c.setFillColorRGB(*GOLD)
-        c.drawRightString(x + col_w - 6 * mm, y, str(counts[champion]))
+        c.setFont(theme.FONT_BOLD, size)
+        c.drawRightString(x + col_w - 5.5 * mm, y, str(counts[champion]))
     c.showPage()
 
 
@@ -318,6 +343,8 @@ def build(skins, profile, tier_counts, icon, path):
             caption += " · " + i18n.chromas(skin["chromas"])
         c.drawString(x_text, y_text - 3.6 * mm, caption)
 
+        if idx == len(skins) - 1:
+            _footer(c, W, H, margin)
         if slot == per_page - 1 or idx == len(skins) - 1:
             c.showPage()
 
