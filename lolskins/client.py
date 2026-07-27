@@ -226,6 +226,52 @@ def fetch_inventory(lockfile=None, log=print):
     return skins, profile
 
 
+COLLECTIBLES = (("icons", "SUMMONER_ICON"), ("wards", "WARD_SKIN"))
+
+
+def fetch_collectibles(lockfile=None, log=print, session=None):
+    """Summoner icons and ward skins, newest acquisition first.
+
+    Every item the endpoint returns is counted, which is what the client's own
+    totals do: some starter icons carry no purchase date and the default ward
+    is free, yet the collection screen still lists them.
+    """
+    if session:
+        s, base = session
+    else:
+        s, base = connect(lockfile, log=log)
+
+    out = {}
+    for key, inventory_type in COLLECTIBLES:
+        try:
+            items = s.get(
+                f"{base}/lol-inventory/v2/inventory/{inventory_type}", timeout=30
+            ).json()
+        except Exception as e:
+            log(f"Could not read {inventory_type}: {e}")
+            out[key] = []
+            continue
+        if not isinstance(items, list):
+            out[key] = []
+            continue
+
+        collected = []
+        for item in items:
+            # "20181125T081240.000Z" -> "2018"
+            stamp = (item.get("purchaseDate") or "")[:4]
+            collected.append({
+                "itemId": item.get("itemId"),
+                "purchaseDate": item.get("purchaseDate") or "",
+                "year": stamp if stamp.isdigit() else "UNDATED",
+                "free": item.get("ownershipType") == "F2P",
+            })
+        collected.sort(key=lambda x: x["purchaseDate"], reverse=True)
+        out[key] = collected
+        log(f"{key.capitalize()} owned: {len(collected)}")
+
+    return out
+
+
 def save(skins, profile, folder=None, log=print):
     folder = folder or output_dir()
     for name, data in (("skins.json", skins), ("profile.json", profile)):

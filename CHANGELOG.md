@@ -4,6 +4,24 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-07-27
+
+### Added
+
+- **Summoner icons and ward skins** are now catalogued too, as their own
+  sections after the skins. Both are grouped by the year you acquired them,
+  newest first, the way the client's collection screen does it. Items with no
+  purchase date land in a final group.
+- **A table of contents on the cover.** Four plaques, styled after the client's
+  collection tabs, name each section and the page it starts on. They are live
+  links, and the PDF also gets a proper outline for the reader's sidebar.
+
+### Changed
+
+- The running page header reads "COLLECTION" rather than "OWNED SKINS", since
+  the document now covers more than skins.
+- Cover layout tightened to make room for the contents block.
+
 ## [1.2.0] — 2026-07-27
 
 ### Added
@@ -78,6 +96,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.3.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.0
 [1.2.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.2.0
 [1.1.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.1.0
 [1.0.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.0.0

@@ -122,8 +122,11 @@ def main(argv=None):
 
     # ------------------------------------------------------------ step 1 --
     print("[1/2] Reading data from the running client…")
+    collectibles = {}
     try:
         skins, profile = client.fetch_inventory(args.lockfile)
+        if "pdf" in formats:
+            collectibles = client.fetch_collectibles(args.lockfile)
     except client.ClientNotFound as e:
         print("\n" + str(e))
         pause(wait, 1)
@@ -142,7 +145,7 @@ def main(argv=None):
         print("      (the first run takes a few minutes, then images are cached)")
     print()
     try:
-        written = build_catalog(skins, profile, out, formats)
+        written = build_catalog(skins, profile, out, formats, collectibles)
     except Exception as e:
         print(f"\nExport failed: {e}")
         traceback.print_exc()
@@ -169,9 +172,10 @@ def main(argv=None):
     pause(wait, 0)
 
 
-def build_catalog(all_skins, profile, out, formats=None):
+def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
     """Writes the requested outputs. Returns the paths that were created."""
     formats = set(formats or FORMATS)
+    collectibles = collectibles or {}
     skins = [s for s in all_skins if not s["isBase"]]
     skins.sort(key=lambda x: (x["champion"].lower(), x["skin"].lower()))
     print(f"Skins to export: {len(skins)}")
@@ -210,9 +214,16 @@ def build_catalog(all_skins, profile, out, formats=None):
         sheet.write_xlsx(skins, profile, tier_counts, path)
         written.append(path)
     if "pdf" in formats:
+        icons = wards = []
+        if collectibles.get("icons") or collectibles.get("wards"):
+            print("Downloading icons and ward skins…")
+            icons = assets.download_collectibles(collectibles.get("icons", []),
+                                                 "icons", out)
+            wards = assets.download_collectibles(collectibles.get("wards", []),
+                                                 "wards", out)
         print("Writing PDF…")
         path = os.path.join(out, "Skins.pdf")
-        pdf.build(skins, profile, tier_counts, icon, path)
+        pdf.build(skins, profile, tier_counts, icon, path, icons=icons, wards=wards)
         written.append(path)
     if keep_full:
         written.append(paths.splash_dir(out))

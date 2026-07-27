@@ -53,6 +53,83 @@ def fetch_profile_icon(icon_id, base=None, log=print):
         return None
 
 
+ICON_WIDTH = 180    # summoner icons are square
+WARD_WIDTH = 220    # ward art is transparent PNG, flattened onto the panel colour
+PANEL_RGB = (16, 28, 50)
+
+CATALOGS = {
+    "icons": ("/v1/summoner-icons.json", "title", "imagePath"),
+    "wards": ("/v1/ward-skins.json", "name", "wardImagePath"),
+}
+
+
+def fetch_catalog(kind, log=print):
+    """{item id: {'name', 'path'}} for summoner icons or ward skins."""
+    endpoint, name_key, path_key = CATALOGS[kind]
+    try:
+        data = requests.get(CDRAGON + endpoint, timeout=60).json()
+    except Exception as e:
+        log(f"Could not download the {kind} catalog: {e}")
+        return {}
+    return {
+        entry["id"]: {
+            "name": entry.get(name_key) or f"#{entry['id']}",
+            "path": entry.get(path_key) or "",
+        }
+        for entry in data
+        if isinstance(entry, dict) and "id" in entry
+    }
+
+
+def download_collectibles(items, kind, base=None, log=print):
+    """Fills each item with 'name' and 'thumb'. Unknown ids are dropped."""
+    catalog = fetch_catalog(kind, log=log)
+    if not catalog:
+        return []
+
+    folder = os.path.join(thumb_dir(base), kind)
+    os.makedirs(folder, exist_ok=True)
+    width = ICON_WIDTH if kind == "icons" else WARD_WIDTH
+    session = requests.Session()
+    kept = []
+
+    for i, item in enumerate(items, 1):
+        entry = catalog.get(item["itemId"])
+        if not entry or not entry["path"]:
+            continue
+        item["name"] = entry["name"]
+        item["thumb"] = os.path.join(folder, f"{item['itemId']}.jpg")
+        kept.append(item)
+        if _is_current(item["thumb"], width):
+            continue
+
+        url = CDRAGON + entry["path"].lower().replace("/lol-game-data/assets", "")
+        try:
+            r = session.get(url, timeout=60)
+            if r.status_code != 200:
+                item["thumb"] = None
+                continue
+            img = Image.open(io.BytesIO(r.content))
+            if img.mode in ("RGBA", "LA", "P"):
+                img = img.convert("RGBA")
+                flat = Image.new("RGB", img.size, PANEL_RGB)
+                flat.paste(img, mask=img.split()[-1])
+                img = flat
+            else:
+                img = img.convert("RGB")
+            height = max(1, round(img.height * width / img.width))
+            img.resize((width, height), Image.LANCZOS).save(
+                item["thumb"], "JPEG", quality=88
+            )
+            if i % 50 == 0 or i == len(items):
+                log(f"  downloaded {i}/{len(items)}")
+        except Exception as e:
+            log(f"[{i}] {kind} {item['itemId']}: {e}")
+            item["thumb"] = None
+
+    return kept
+
+
 def _is_current(path, width):
     """True when the cached file already has the width we want.
 

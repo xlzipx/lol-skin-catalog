@@ -164,6 +164,58 @@ def test_cache_freshness():
         check("matching width is reused", assets._is_current(path, 220))
 
 
+def fake_collectibles(count, kind):
+    years = ["2026", "2025", "2024", "2023", "UNDATED"]
+    return [
+        {
+            "itemId": i,
+            "purchaseDate": "" if years[i % len(years)] == "UNDATED"
+            else f"{years[i % len(years)]}0101T000000.000Z",
+            "year": years[i % len(years)],
+            "name": f"{kind} {i}",
+            "thumb": None,
+        }
+        for i in range(count)
+    ]
+
+
+def test_year_grouping():
+    print("acquisition grouping")
+    items = fake_collectibles(20, "icon")
+    grouped = pdf._group_by_year(items)
+    order = [year for year, _ in grouped]
+    check("newest year first", order[0] == "2026", order)
+    check("undated goes last", order[-1] == "UNDATED", order)
+    check("nothing is lost", sum(len(g) for _, g in grouped) == len(items))
+
+    plan = pdf._plan_year_grid(items, columns=8, cell_h=26, header_h=13,
+                               available_h=250)
+    check("plan produces pages", len(plan) >= 1, len(plan))
+    placed = sum(len(row) for page in plan for kind, row, _ in page if kind == "row")
+    check("every item is placed", placed == len(items), placed)
+    check("no page starts with a stranded heading",
+          all(page[0][0] == "header" for page in plan))
+
+
+def test_collection_sections():
+    print("collection sections in the PDF")
+    skins = fake_skins()
+    counts = {}
+    for skin in skins:
+        counts[skin["rarity"]] = counts.get(skin["rarity"], 0) + 1
+
+    with tempfile.TemporaryDirectory() as tmp:
+        plain = os.path.join(tmp, "plain.pdf")
+        full = os.path.join(tmp, "full.pdf")
+        base_pages = pdf.build(skins, FAKE_PROFILE, counts, None, plain)
+        all_pages = pdf.build(skins, FAKE_PROFILE, counts, None, full,
+                              icons=fake_collectibles(40, "icon"),
+                              wards=fake_collectibles(12, "ward"))
+        check("sections add pages", all_pages > base_pages, (base_pages, all_pages))
+        check("both PDFs written",
+              os.path.getsize(plain) > 0 and os.path.getsize(full) > 0)
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -176,7 +228,8 @@ def test_english_only():
 if __name__ == "__main__":
     for test in (test_imports, test_chroma_label, test_gems, test_outputs,
                  test_large_collection_fits, test_format_selection,
-                 test_cache_freshness, test_english_only):
+                 test_cache_freshness, test_year_grouping,
+                 test_collection_sections, test_english_only):
         test()
 
     print()

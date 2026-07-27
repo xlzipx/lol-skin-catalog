@@ -10,7 +10,7 @@ with splash art, rarity tiers and chroma counts.
 
 | File | Contents |
 |---|---|
-| `Skins.pdf` | Cover with your profile, a champion roster, then a grid of every skin |
+| `Skins.pdf` | Cover with your profile and a linked table of contents, a champion roster, every skin, then your summoner icons and ward skins |
 | `Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
 | `skins.csv` | Plain list, no images |
 | `splashes/` | Splash art as individual JPEGs, 720 px wide |
@@ -89,10 +89,16 @@ computer, nowhere else:
 |---|---|
 | `/lol-summoner/v1/current-summoner` | Display name, tag, level, profile icon id |
 | `/lol-champions/v1/inventories/{id}/champions` | Champions and their skins, with an `owned` flag |
+| `/lol-inventory/v2/inventory/SUMMONER_ICON` | Owned summoner icons and when you got them |
+| `/lol-inventory/v2/inventory/WARD_SKIN` | Owned ward skins and when you got them |
 
 This interface is the LCU API — the same one the client's own screens are built
 on, and the same one third-party apps such as OP.GG or Blitz use. It is not
 officially documented by Riot, but it is a normal local API, not a hack.
+
+Icons and wards are counted exactly the way the client counts them: every item
+the inventory returns, including a handful of starter icons that carry no
+purchase date and the free default ward.
 
 ### 3. Fetching the artwork
 

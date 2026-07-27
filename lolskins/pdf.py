@@ -49,7 +49,7 @@ def _thumb_ratio(skins, default=SPLASH_RATIO):
 # ---------------------------------------------------------------- cover ----
 
 
-def _cover(c, W, H, skins, profile, tier_counts, icon):
+def _cover(c, W, H, skins, profile, tier_counts, icon, contents=None):
     page_background(c, W, H)
 
     # soft glow along the top edge
@@ -90,7 +90,7 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     tracked_text(c, W / 2, y, "OWNED SKINS COLLECTION", theme.FONT, 9, 3.6, "center")
 
     # headline count
-    y_circle = y - 40 * mm
+    y_circle = y - 36 * mm
     r = 24 * mm
     c.setFillColorRGB(*PANEL)
     c.circle(W / 2, y_circle, r, fill=1, stroke=0)
@@ -111,7 +111,7 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     tracked_text(c, W / 2, y_circle - 13.5 * mm, "OWNED", theme.FONT, 7.5, 2.2, "center")
 
     # rarity strip
-    y_gem = y_circle - r - 26 * mm
+    y_gem = y_circle - r - 24 * mm
     step = min(24 * mm, (W - 60 * mm) / max(1, len(TIERS)))
     x0 = W / 2 - step * (len(TIERS) - 1) / 2
     for i, tier in enumerate(TIERS):
@@ -125,7 +125,7 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
         c.drawCentredString(x, y_gem - 19 * mm, tier.upper())
 
     # secondary stats
-    y_rule = y_gem - 30 * mm
+    y_rule = y_gem - 27 * mm
     c.setStrokeColorRGB(*GOLD_DARK)
     c.setLineWidth(0.5)
     c.line(W / 2 - 48 * mm, y_rule, W / 2 + 48 * mm, y_rule)
@@ -145,11 +145,50 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
         c.setFillColorRGB(*TEXT_DIM)
         tracked_text(c, x, y_rule - 15.5 * mm, label, theme.FONT, 7, 1.1, "center")
 
+    if contents:
+        _cover_contents(c, W, margin=12 * mm, top=y_rule - 24 * mm, entries=contents)
+
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 7)
-    c.drawCentredString(W / 2, 18 * mm,
+    c.drawCentredString(W / 2, 15 * mm,
                         "Generated " + date.today().strftime("%d. %m. %Y"))
     c.showPage()
+
+
+def _cover_contents(c, W, margin, top, entries):
+    """A row of plaques pointing at each section, echoing the client's tab bar.
+
+    Every plaque is a live link, so the page number is also a jump target.
+    """
+    c.setStrokeColorRGB(*GOLD_DARK)
+    c.setLineWidth(0.5)
+    c.line(margin + 12 * mm, top, W / 2 - 14 * mm, top)
+    c.line(W / 2 + 14 * mm, top, W - margin - 12 * mm, top)
+    c.setFillColorRGB(*TEXT_DIM)
+    tracked_text(c, W / 2, top - 1.2 * mm, "CONTENTS", theme.FONT, 6.5, 2.4, "center")
+
+    gap = 3 * mm
+    width = (W - 2 * margin - (len(entries) - 1) * gap) / len(entries)
+    height = 15 * mm
+    y = top - 6 * mm - height
+
+    for i, (label, page, anchor) in enumerate(entries):
+        x = margin + i * (width + gap)
+        c.setFillColorRGB(*PANEL)
+        c.roundRect(x, y, width, height, 1.2 * mm, fill=1, stroke=0)
+        c.setStrokeColorRGB(*GOLD_DARK)
+        c.setLineWidth(0.5)
+        c.roundRect(x, y, width, height, 1.2 * mm, fill=0, stroke=1)
+
+        c.setFillColorRGB(*TEXT_DIM)
+        tracked_text(c, x + width / 2, y + height - 5.5 * mm, label.upper(),
+                     theme.FONT, 6, 1.0, "center")
+        c.setFillColorRGB(*GOLD)
+        c.setFont(theme.FONT_DISPLAY_BOLD, 13)
+        c.drawCentredString(x + width / 2, y + 3.6 * mm, str(page))
+
+        if anchor:
+            c.linkAbsolute("", anchor, (x, y, x + width, y + height), thickness=0)
 
 
 # ----------------------------------------------------------- page chrome ----
@@ -183,7 +222,7 @@ def _page_header(c, W, H, margin, name, page, total):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, margin, H - margin - 5 * mm,
-                 f"{name}'S OWNED SKINS", theme.FONT_DISPLAY_BOLD, 10, 1.8)
+                 f"{name}'S COLLECTION", theme.FONT_DISPLAY_BOLD, 10, 1.8)
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 7.5)
     c.drawRightString(W - margin, H - margin - 5 * mm, f"{page} / {total}")
@@ -206,6 +245,8 @@ def _roster(c, W, H, margin, skins, name, total_pages):
     here would just duplicate the page before.
     """
     _page_header(c, W, H, margin, name, 2, total_pages)
+    c.bookmarkPage("section-roster")
+    c.addOutlineEntry("Champion roster", "section-roster", 0)
 
     counts = {}
     for skin in skins:
@@ -251,10 +292,114 @@ def _roster(c, W, H, margin, skins, name, total_pages):
     c.showPage()
 
 
+# --------------------------------------------------- icons and ward skins ----
+
+# tile geometry per collectible kind
+LAYOUT = {
+    "icons": {"columns": 8, "label": "SUMMONER ICONS", "square": True},
+    "wards": {"columns": 6, "label": "WARD SKINS", "square": True},
+}
+
+
+def _group_by_year(items):
+    """Newest year first; anything without a purchase date goes last."""
+    groups = {}
+    for item in items:
+        groups.setdefault(item.get("year") or "UNDATED", []).append(item)
+    years = sorted((y for y in groups if y != "UNDATED"), reverse=True)
+    if "UNDATED" in groups:
+        years.append("UNDATED")
+    return [(year, groups[year]) for year in years]
+
+
+def _plan_year_grid(items, columns, cell_h, header_h, available_h):
+    """Splits year groups into pages. Returns a list of pages of blocks.
+
+    Done before anything is drawn so the cover can print real page numbers.
+    """
+    pages, page, used = [], [], 0.0
+    for year, group in _group_by_year(items):
+        rows = [group[i:i + columns] for i in range(0, len(group), columns)]
+        # never leave a heading stranded at the bottom of a page
+        if page and used + header_h + cell_h > available_h:
+            pages.append(page)
+            page, used = [], 0.0
+        page.append(("header", year, used))
+        used += header_h
+        for row in rows:
+            if used + cell_h > available_h:
+                pages.append(page)
+                page, used = [], 0.0
+                page.append(("header", year + " (continued)", used))
+                used += header_h
+            page.append(("row", row, used))
+            used += cell_h
+    if page:
+        pages.append(page)
+    return pages
+
+
+def _draw_collection(c, W, H, margin, kind, plan, name, first_page, total_pages,
+                     footer=False):
+    """Renders the planned pages for one collectible kind."""
+    setup = LAYOUT[kind]
+    columns = setup["columns"]
+    header_h = 13 * mm
+    col_w = (W - 2 * margin) / columns
+    tile = col_w - 4 * mm
+    cell_h = tile + 7 * mm
+    top = H - margin - 16 * mm
+
+    for offset, blocks in enumerate(plan):
+        page_no = first_page + offset
+        _page_header(c, W, H, margin, name, page_no, total_pages)
+        if offset == 0:
+            c.bookmarkPage(f"section-{kind}")
+            c.addOutlineEntry(setup["label"].title(), f"section-{kind}", 0)
+
+        for block in blocks:
+            if block[0] == "header":
+                _, year, used = block
+                y = top - used
+                label = "ACQUIRED " + year if year[:4].isdigit() else "NO ACQUISITION DATE"
+                if year.endswith("(continued)"):
+                    label = "ACQUIRED " + year
+                c.setFillColorRGB(*GOLD)
+                tracked_text(c, margin, y - 6 * mm, label,
+                             theme.FONT_DISPLAY_BOLD, 10, 2.0)
+                c.setStrokeColorRGB(*GOLD_DARK)
+                c.setLineWidth(0.4)
+                c.line(margin, y - 9 * mm, W - margin, y - 9 * mm)
+            else:
+                _, row, used = block
+                y = top - used
+                for i, item in enumerate(row):
+                    x = margin + i * col_w
+                    c.setFillColorRGB(*PANEL)
+                    c.roundRect(x, y - tile, tile, tile, 1 * mm, fill=1, stroke=0)
+                    if item.get("thumb") and os.path.exists(item["thumb"]):
+                        with Image.open(item["thumb"]) as im:
+                            ratio = im.height / im.width
+                        # fit inside the square tile and centre what is left over
+                        if ratio > 1:
+                            h, w = tile, tile / ratio
+                        else:
+                            w, h = tile, tile * ratio
+                        c.drawImage(item["thumb"],
+                                    x + (tile - w) / 2, y - tile + (tile - h) / 2,
+                                    width=w, height=h, mask="auto")
+                    c.setStrokeColorRGB(*GOLD_DARK)
+                    c.setLineWidth(0.4)
+                    c.rect(x, y - tile, tile, tile, fill=0, stroke=1)
+        if footer and offset == len(plan) - 1:
+            _footer(c, W, H, margin)
+        c.showPage()
+
+
 # ------------------------------------------------------------------ grid ----
 
 
-def build(skins, profile, tier_counts, icon, path):
+def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
     theme.register_fonts()
 
     W, H = A4
@@ -268,7 +413,7 @@ def build(skins, profile, tier_counts, icon, path):
     name = _header_name(profile)
 
     c = pdfcanvas.Canvas(path, pagesize=A4)
-    c.setTitle(f"{profile.get('gameName', '')} - League of Legends owned skins")
+    c.setTitle(f"{profile.get('gameName', '')} - League of Legends collection")
     c.setAuthor(profile.get("gameName", ""))
 
     card_w = (W - 2 * margin - (columns - 1) * gap) / columns
@@ -280,15 +425,41 @@ def build(skins, profile, tier_counts, icon, path):
     rows = max(1, int((available + gap) // (card_h + gap)))
     per_page = columns * rows
     grid_pages = (len(skins) + per_page - 1) // per_page
-    total_pages = grid_pages + 2
 
-    _cover(c, W, H, skins, profile, tier_counts, icon)
+    # Plan the collectible sections before drawing anything, so the cover can
+    # print the page each section really starts on.
+    plans = {}
+    for kind, items in (("icons", icons or []), ("wards", wards or [])):
+        if not items:
+            continue
+        setup = LAYOUT[kind]
+        col_w = (W - 2 * margin) / setup["columns"]
+        tile = col_w - 4 * mm
+        plans[kind] = _plan_year_grid(
+            items, setup["columns"], tile + 7 * mm, 13 * mm,
+            H - margin - 16 * mm - margin,
+        )
+
+    total_pages = grid_pages + 2 + sum(len(p) for p in plans.values())
+
+    contents = [("Champion roster", 2, "section-roster"),
+                ("Skins", 3, "section-skins")]
+    next_page = 3 + grid_pages
+    for kind in ("icons", "wards"):
+        if kind in plans:
+            contents.append((LAYOUT[kind]["label"], next_page, f"section-{kind}"))
+            next_page += len(plans[kind])
+
+    _cover(c, W, H, skins, profile, tier_counts, icon, contents)
     _roster(c, W, H, margin, skins, name, total_pages)
 
     for idx, skin in enumerate(skins):
         slot = idx % per_page
         if slot == 0:
             _page_header(c, W, H, margin, name, idx // per_page + 3, total_pages)
+            if idx == 0:
+                c.bookmarkPage("section-skins")
+                c.addOutlineEntry("Skins", "section-skins", 0)
 
         col, row = slot % columns, slot // columns
         x = margin + col * (card_w + gap)
@@ -333,10 +504,19 @@ def build(skins, profile, tier_counts, icon, path):
             caption += " · " + chroma_label(skin["chromas"])
         c.drawString(x_text, y_text - 3.6 * mm, caption)
 
-        if idx == len(skins) - 1:
+        if idx == len(skins) - 1 and not plans:
             _footer(c, W, H, margin)
         if slot == per_page - 1 or idx == len(skins) - 1:
             c.showPage()
+
+    page_no = 3 + grid_pages
+    for kind in ("icons", "wards"):
+        if kind not in plans:
+            continue
+        last = kind == ("wards" if "wards" in plans else "icons")
+        _draw_collection(c, W, H, margin, kind, plans[kind], name,
+                         page_no, total_pages, footer=last)
+        page_no += len(plans[kind])
 
     c.save()
     return total_pages
