@@ -2,8 +2,7 @@
 LoL Skin Catalog - entry point.
 
 Usage:
-    python main.py                     auto-detect language, write next to the project
-    python main.py --lang cs           force Czech output
+    python main.py                     write next to the current folder
     python main.py --output D:\\export  write somewhere else
     python main.py --lockfile "..."    point at the client manually
 """
@@ -27,7 +26,7 @@ for stream in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-from lolskins import assets, client, i18n, paths, pdf, sheet  # noqa: E402
+from lolskins import assets, client, paths, pdf, sheet  # noqa: E402
 
 RULE = "─" * 58
 
@@ -37,8 +36,6 @@ def parse_args(argv=None):
         prog="lol-skin-catalog",
         description="Export the League of Legends skins you own into PDF, XLSX and CSV.",
     )
-    p.add_argument("--lang", choices=i18n.LANGUAGES,
-                   help="output language (default: system locale, else English)")
     p.add_argument("--output", metavar="DIR", help="where to write the results")
     p.add_argument("--lockfile", metavar="PATH",
                    help="path to the client's lockfile (only for odd installs)")
@@ -52,7 +49,7 @@ def parse_args(argv=None):
 def pause(enabled, code=0):
     if enabled:
         try:
-            input(i18n.t("press_enter"))
+            input("\nPress Enter to close…")
         except Exception:
             pass
     sys.exit(code)
@@ -60,50 +57,49 @@ def pause(enabled, code=0):
 
 def main(argv=None):
     args = parse_args(argv)
-    i18n.set_language(args.lang or i18n.detect_language())
 
     out = os.path.abspath(args.output) if args.output else paths.output_dir()
     os.makedirs(out, exist_ok=True)
     wait = not args.no_pause
 
     print(RULE)
-    print("  " + i18n.t("app_title"))
+    print("  LEAGUE OF LEGENDS SKIN CATALOG")
     print(RULE)
-    print("\n" + i18n.t("output_folder") + "\n  " + out + "\n")
+    print("\nOutput will be saved to:\n  " + out + "\n")
 
     # ------------------------------------------------------------ step 1 --
-    print(i18n.t("step_read"))
+    print("[1/2] Reading data from the running client…")
     try:
         skins, profile = client.fetch_inventory(args.lockfile)
     except client.ClientNotFound as e:
         print("\n" + str(e))
         pause(wait, 1)
     except Exception as e:
-        print("\n" + i18n.t("read_failed", error=e))
-        print(i18n.t("check_client"))
+        print(f"\nCould not read data from the client: {e}")
+        print("Make sure the League client is running and you are logged in.")
         pause(wait, 1)
 
     client.save(skins, profile, out)
 
     # ------------------------------------------------------------ step 2 --
-    print("\n" + i18n.t("step_build"))
-    print(i18n.t("step_build_note") + "\n")
+    print("\n[2/2] Downloading splash art and building the catalog…")
+    print("      (the first run takes a few minutes, then images are cached)\n")
     try:
         catalog = build_catalog(skins, profile, out)
     except Exception as e:
-        print("\n" + i18n.t("export_failed", error=e))
+        print(f"\nExport failed: {e}")
         traceback.print_exc()
         pause(wait, 1)
 
     print("\n" + RULE)
-    print("  " + i18n.t("done"))
+    print("  DONE")
     print(RULE + "\n")
-    print(i18n.t("created"))
+    print("Created:")
     for name in ("Skins.pdf", "Skins.xlsx", "skins.csv"):
         path = os.path.join(out, name)
         if os.path.exists(path):
             print(f"  {name:<14} {os.path.getsize(path) / 1048576:.1f} MB")
-    print(i18n.t("splash_folder_note"))
+    print("  splashes/      folder with splash art")
 
     if not args.no_open and os.path.exists(catalog):
         try:
@@ -117,7 +113,7 @@ def build_catalog(all_skins, profile, out):
     """Downloads art and writes every output. Returns the path to the PDF."""
     skins = [s for s in all_skins if not s["isBase"]]
     skins.sort(key=lambda x: (x["champion"].lower(), x["skin"].lower()))
-    print(i18n.t("skins_to_export", count=len(skins)))
+    print(f"Skins to export: {len(skins)}")
 
     rarities = assets.fetch_rarities()
     for skin in skins:
@@ -126,18 +122,18 @@ def build_catalog(all_skins, profile, out):
     tier_counts = {}
     for skin in skins:
         tier_counts[skin["rarity"]] = tier_counts.get(skin["rarity"], 0) + 1
-    readable = {k or i18n.t("pdf_no_tier"): v for k, v in tier_counts.items()}
-    print(i18n.t("rarity_line", data=json.dumps(readable, ensure_ascii=False)))
+    readable = {k or "No tier": v for k, v in tier_counts.items()}
+    print("Rarities: " + json.dumps(readable))
 
-    print(i18n.t("downloading_splashes"))
+    print("Downloading splash art…")
     assets.download_splashes(skins, out)
     icon = assets.fetch_profile_icon(profile.get("profileIconId"), out)
 
-    print(i18n.t("writing_csv"))
+    print("Writing CSV…")
     sheet.write_csv(skins, os.path.join(out, "skins.csv"))
-    print(i18n.t("writing_xlsx"))
+    print("Writing XLSX…")
     sheet.write_xlsx(skins, profile, tier_counts, os.path.join(out, "Skins.xlsx"))
-    print(i18n.t("writing_pdf"))
+    print("Writing PDF…")
     catalog = os.path.join(out, "Skins.pdf")
     pdf.build(skins, profile, tier_counts, icon, catalog)
     return catalog

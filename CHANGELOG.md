@@ -4,6 +4,32 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-07-27
+
+### Changed
+
+- Page two of the catalog is now a champion roster. The rarity gems were
+  repeated there directly below the cover; they stay on the cover only, and the
+  freed space went into a larger, more readable champion list.
+- Cover statistics renamed so they cannot be confused: "Champions with skins"
+  counts the champions present in the catalog, "Champions owned" counts every
+  unlocked champion.
+- Rarity gems follow the in-game side counts: Legendary four, Mythic five,
+  Ultimate six. The Legendary gem is now as wide as it is tall.
+- The last catalog page credits the project and links to the repository.
+
+### Removed
+
+- Czech translation and the `--lang` switch. The tool is English only, which
+  removes the translation layer entirely.
+
+### Added
+
+- GitHub Actions workflow running an offline smoke test on Ubuntu and Windows
+  against Python 3.9 and 3.12.
+- `tests/smoke_test.py`, which builds every output from synthetic data and
+  needs neither the game client nor network access.
+
 ## [1.0.0] — 2026-07-27
 
 First public release.
@@ -24,10 +50,8 @@ First public release.
   `LeagueClientUx.exe` process, so the install location does not matter.
   Falls back to the `lockfile`, an explicit `--lockfile` path, the
   `LOL_LOCKFILE` variable, or a scan of every drive.
-- **Bilingual output** in English and Czech, chosen from the system locale and
-  overridable with `--lang`. Czech gets correct plural forms for chromas.
 - **Standalone Windows executable** built by `build.py`, packaged into a ZIP
-  with bilingual instructions and a plain-Python fallback.
+  with instructions and a plain-Python fallback.
 
 ### Notes
 
@@ -37,4 +61,5 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.1.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.1.0
 [1.0.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.0.0

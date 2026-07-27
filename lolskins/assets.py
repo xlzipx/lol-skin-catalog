@@ -9,7 +9,6 @@ import os
 import requests
 from PIL import Image
 
-from . import i18n
 from .paths import safe_filename, splash_dir, thumb_dir
 from .theme import RARITY_ENUM
 
@@ -27,7 +26,7 @@ def fetch_rarities(log=print):
     try:
         data = requests.get(CDRAGON + "/v1/skins.json", timeout=60).json()
     except Exception as e:
-        log(i18n.t("rarity_fetch_failed", error=e))
+        log(f"Could not download rarity data: {e}")
         return {}
     return {
         int(sid): RARITY_ENUM.get(v.get("rarity", ""), "")
@@ -48,7 +47,7 @@ def fetch_profile_icon(icon_id, base=None, log=print):
         Image.open(io.BytesIO(r.content)).convert("RGB").save(target, "JPEG", quality=92)
         return target
     except Exception as e:
-        log(i18n.t("profile_icon_failed", error=e))
+        log(f"Could not download the profile icon: {e}")
         return None
 
 
@@ -84,7 +83,7 @@ def download_splashes(skins, base=None, log=print):
                     target, "JPEG", quality=88
                 )
             if i % 25 == 0 or i == len(skins):
-                log(i18n.t("download_progress", done=i, total=len(skins)))
+                log(f"  downloaded {i}/{len(skins)}")
         except Exception as e:
             log(f"[{i}] {name}: {e}")
             skin["file"] = skin["thumb"] = None

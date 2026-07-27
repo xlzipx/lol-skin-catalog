@@ -4,6 +4,7 @@ itself uses. Read-only: nothing is written back to the game.
 """
 
 import base64
+import json
 import os
 import re
 import string
@@ -13,7 +14,6 @@ import sys
 import requests
 import urllib3
 
-from . import i18n
 from .paths import output_dir
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -31,6 +31,22 @@ MAC_PATHS = [
     "/Applications/League of Legends.app/Contents/LoL/lockfile",
     os.path.expanduser("~/Applications/League of Legends.app/Contents/LoL/lockfile"),
 ]
+
+NOT_FOUND_EXE = """\
+Could not connect to the League client.
+
+  1) Start League of Legends and log in (the lobby is enough, you do not
+     have to play), then run this program again.
+
+  2) If the client is running and it still fails, find the file 'lockfile'
+     in your League of Legends folder and drag it onto this .exe."""
+
+NOT_FOUND_SCRIPT = """\
+Could not connect to the League client.
+
+  1) The League client must be running (logged in is enough).
+  2) For a non-standard install, pass the path manually:
+     python main.py --lockfile "path/to/League of Legends/lockfile\""""
 
 
 class ClientNotFound(RuntimeError):
@@ -139,14 +155,15 @@ def connect(lockfile=None, log=print):
     credentials = _credentials_from_process()
     if credentials:
         port, password = credentials
-        log(i18n.t("client_found_port", port=port))
+        log(f"Client found via its running process (port {port})")
         return _session(port, password)
 
     path = find_lockfile(lockfile)
     if not path:
-        key = "no_client_exe" if getattr(sys, "frozen", False) else "no_client_script"
-        raise ClientNotFound(i18n.t(key))
-    log(i18n.t("lockfile_used", path=path))
+        raise ClientNotFound(
+            NOT_FOUND_EXE if getattr(sys, "frozen", False) else NOT_FOUND_SCRIPT
+        )
+    log(f"Lockfile: {path}")
     with open(path, "r", encoding="utf-8") as f:
         parts = f.read().strip().split(":")
     return _session(parts[2], parts[3], parts[4])
@@ -157,7 +174,7 @@ def fetch_inventory(lockfile=None, log=print):
     s, base = connect(lockfile, log=log)
 
     me = s.get(f"{base}/lol-summoner/v1/current-summoner").json()
-    log(i18n.t("logged_in_as", name=me.get("gameName") or me.get("displayName")))
+    log(f"Logged in as: {me.get('gameName') or me.get('displayName')}")
 
     champions = s.get(
         f"{base}/lol-champions/v1/inventories/{me['summonerId']}/champions"
@@ -192,8 +209,8 @@ def fetch_inventory(lockfile=None, log=print):
                 chromas_on_skins += 1
 
     skins.sort(key=lambda x: (x["champion"].lower(), x["skin"].lower()))
-    log(i18n.t("owned_incl_base", count=len(skins)))
-    log(i18n.t("owned_real", count=sum(1 for s_ in skins if not s_["isBase"])))
+    log(f"Owned skins (including base): {len(skins)}")
+    log(f"Real skins (base excluded): {sum(1 for s_ in skins if not s_['isBase'])}")
 
     profile = {
         "gameName": me.get("gameName") or me.get("displayName") or "",
@@ -210,10 +227,8 @@ def fetch_inventory(lockfile=None, log=print):
 
 
 def save(skins, profile, folder=None, log=print):
-    import json
-
     folder = folder or output_dir()
     for name, data in (("skins.json", skins), ("profile.json", profile)):
         with open(os.path.join(folder, name), "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
-        log(i18n.t("saved_to", name=name))
+        log(f"Saved to {name}")

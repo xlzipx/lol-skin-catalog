@@ -4,15 +4,13 @@ Exports every League of Legends skin **you own** into a printable PDF catalog,
 an Excel sheet with thumbnails and a plain CSV list — sorted alphabetically,
 with splash art, rarity tiers and chroma counts.
 
-🇨🇿 [Česká verze tohoto souboru](README.cs.md)
-
 ---
 
 ## What you get
 
 | File | Contents |
 |---|---|
-| `Skins.pdf` | Cover with your profile, a collection summary, then a grid of every skin |
+| `Skins.pdf` | Cover with your profile, a champion roster, then a grid of every skin |
 | `Skins.xlsx` | Filterable table with embedded thumbnails and colour-coded rarities |
 | `skins.csv` | Plain list, no images |
 | `splashes/` | Splash art as individual JPEGs, 480 px wide |
@@ -46,7 +44,6 @@ Options:
 
 | Flag | Meaning |
 |---|---|
-| `--lang en\|cs` | Output language. Defaults to your system locale, else English |
 | `--output DIR` | Write results somewhere else |
 | `--lockfile PATH` | Point at the client manually (only needed for odd installs) |
 | `--no-pause` | Do not wait for Enter when finished |
@@ -145,8 +142,11 @@ lolskins/
   pdf.py            the PDF catalog
   sheet.py          XLSX and CSV
   theme.py          colours, rarity gems, fonts
-  i18n.py           English and Czech strings
   paths.py          where files are written
+tests/
+  smoke_test.py     offline build of every output, run by CI
+.github/workflows/
+  ci.yml            Ubuntu and Windows, Python 3.9 and 3.12
 ```
 
 ## Building the executable
@@ -156,8 +156,8 @@ pip install pyinstaller
 python build.py
 ```
 
-Produces `dist/LoL-Skin-Catalog.exe` plus a ready-to-send ZIP with bilingual
-instructions.
+Produces `dist/LoL-Skin-Catalog.exe` plus a ready-to-send ZIP with instructions
+and a plain-Python fallback.
 
 Because the binary is unsigned, Windows SmartScreen will warn about it on first
 launch ("More info" → "Run anyway"), and some antivirus products flag one-file

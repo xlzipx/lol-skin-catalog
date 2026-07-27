@@ -12,7 +12,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lolskins import i18n, pdf, sheet, theme  # noqa: E402
+from lolskins import pdf, sheet, theme  # noqa: E402
 
 FAILURES = []
 
@@ -53,42 +53,20 @@ FAKE_PROFILE = {
 }
 
 
-def test_translations():
-    print("translations")
-    missing = [
-        f"{key}:{lang}"
-        for key, value in i18n.STRINGS.items()
-        for lang in i18n.LANGUAGES
-        if not value.get(lang)
-    ]
-    check("every string exists in all languages", not missing, missing[:5])
-    check("t() falls back for unknown keys", i18n.t("definitely_not_a_key") == "definitely_not_a_key")
+def test_imports():
+    print("imports")
+    from lolskins import assets, client, paths  # noqa: F401
+
+    check("client module imports", hasattr(client, "fetch_inventory"))
+    check("assets module imports", hasattr(assets, "download_splashes"))
+    check("safe_filename strips separators", "/" not in paths.safe_filename("a/b:c"))
 
 
-def test_chromas():
+def test_chroma_label():
     print("chroma wording")
-    for lang in i18n.LANGUAGES:
-        i18n.set_language(lang)
-        check(f"[{lang}] singular", i18n.chromas(1) == "1 chroma", i18n.chromas(1))
-        check(f"[{lang}] plural", i18n.chromas(6) == "6 chromas", i18n.chromas(6))
-        check(f"[{lang}] no declined form", "chromat" not in i18n.chromas(5).lower())
-
-
-def test_language_detection():
-    print("language detection")
-    original = i18n._locale_candidates
-    cases = [
-        (["cs_CZ"], "cs"), (["cs-CZ"], "cs"), (["Czech_Czechia"], "cs"),
-        (["cs_CZ.UTF-8"], "cs"), (["en_US"], "en"), (["de_DE"], "en"),
-        (["sk_SK"], "en"), ([], "en"),
-    ]
-    try:
-        for candidates, expected in cases:
-            i18n._locale_candidates = lambda c=candidates: c
-            result = i18n.detect_language()
-            check(f"{candidates or '(none)'} -> {expected}", result == expected, result)
-    finally:
-        i18n._locale_candidates = original
+    check("singular", pdf.chroma_label(1) == "1 chroma", pdf.chroma_label(1))
+    check("plural", pdf.chroma_label(6) == "6 chromas", pdf.chroma_label(6))
+    check("zero reads as plural", pdf.chroma_label(0) == "0 chromas")
 
 
 def test_gems():
@@ -104,6 +82,9 @@ def test_gems():
     check("all tiers draw without error", True)
     check("every tier has a colour", all(t in theme.TIER_COLOR for t in theme.TIERS))
     check("every tier has a hex for Excel", all(t in theme.TIER_HEX for t in theme.TIERS))
+    check("gem side counts: Legendary 4, Mythic 5, Ultimate 6",
+          theme.TIERS.index("Ultimate") < theme.TIERS.index("Mythic")
+          < theme.TIERS.index("Legendary"))
 
 
 def test_outputs():
@@ -113,35 +94,50 @@ def test_outputs():
     for skin in skins:
         counts[skin["rarity"]] = counts.get(skin["rarity"], 0) + 1
 
-    for lang in i18n.LANGUAGES:
-        i18n.set_language(lang)
-        with tempfile.TemporaryDirectory() as tmp:
-            csv_path = os.path.join(tmp, "skins.csv")
-            xlsx_path = os.path.join(tmp, "Skins.xlsx")
-            pdf_path = os.path.join(tmp, "Skins.pdf")
+    with tempfile.TemporaryDirectory() as tmp:
+        csv_path = os.path.join(tmp, "skins.csv")
+        xlsx_path = os.path.join(tmp, "Skins.xlsx")
+        pdf_path = os.path.join(tmp, "Skins.pdf")
 
-            sheet.write_csv(skins, csv_path)
-            sheet.write_xlsx(skins, FAKE_PROFILE, counts, xlsx_path)
-            pages = pdf.build(skins, FAKE_PROFILE, counts, None, pdf_path)
+        sheet.write_csv(skins, csv_path)
+        sheet.write_xlsx(skins, FAKE_PROFILE, counts, xlsx_path)
+        pages = pdf.build(skins, FAKE_PROFILE, counts, None, pdf_path)
 
-            check(f"[{lang}] CSV written", os.path.getsize(csv_path) > 0)
-            check(f"[{lang}] XLSX written", os.path.getsize(xlsx_path) > 0)
-            check(f"[{lang}] PDF written", os.path.getsize(pdf_path) > 0)
-            check(f"[{lang}] cover + summary + grid", pages >= 3, pages)
+        check("CSV written", os.path.getsize(csv_path) > 0)
+        check("XLSX written", os.path.getsize(xlsx_path) > 0)
+        check("PDF written", os.path.getsize(pdf_path) > 0)
+        check("cover + roster + grid", pages >= 3, pages)
 
 
-def test_imports():
-    print("imports")
-    from lolskins import assets, client, paths  # noqa: F401
+def test_large_collection_fits():
+    print("large collection still fits one roster page")
+    skins = []
+    for i in range(170):
+        skins.append({
+            "champion": f"Champion Number {i}", "skin": f"Skin {i}",
+            "skinId": i, "chromas": 0, "isBase": False, "rarity": "Epic",
+            "file": None, "thumb": None,
+        })
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "Skins.pdf")
+        pages = pdf.build(skins, FAKE_PROFILE, {"Epic": 170}, None, path)
+        grid_pages = pages - 2
+        check("roster stays on a single page", pages == grid_pages + 2, pages)
+        check("PDF written", os.path.getsize(path) > 0)
 
-    check("client module imports", hasattr(client, "fetch_inventory"))
-    check("assets module imports", hasattr(assets, "download_splashes"))
-    check("safe_filename strips separators", "/" not in paths.safe_filename("a/b:c"))
+
+def test_english_only():
+    print("no leftover translation layer")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    check("i18n module removed",
+          not os.path.exists(os.path.join(root, "lolskins", "i18n.py")))
+    check("Czech readme removed",
+          not os.path.exists(os.path.join(root, "README.cs.md")))
 
 
 if __name__ == "__main__":
-    for test in (test_imports, test_translations, test_chromas,
-                 test_language_detection, test_gems, test_outputs):
+    for test in (test_imports, test_chroma_label, test_gems, test_outputs,
+                 test_large_collection_fits, test_english_only):
         test()
 
     print()

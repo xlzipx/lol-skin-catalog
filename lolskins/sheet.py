@@ -10,20 +10,16 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from PIL import Image
 
-from . import i18n
 from .theme import TIERS, TIER_HEX
 
 IMAGE_WIDTH_PX = 200
+COLUMNS = ["#", "Champion", "Skin", "Rarity", "Chromas", "Skin ID", "Splash art"]
 
 
 def write_csv(skins, path):
     with open(path, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
-        w.writerow([
-            i18n.t("col_index"), i18n.t("col_champion"), i18n.t("col_skin"),
-            i18n.t("col_rarity"), i18n.t("col_chromas"), i18n.t("col_skin_id"),
-            i18n.t("col_splash_file"),
-        ])
+        w.writerow(COLUMNS[:-1] + ["Splash file"])
         for i, skin in enumerate(skins, 1):
             w.writerow([
                 i, skin["champion"], skin["skin"], skin.get("rarity", ""),
@@ -35,19 +31,14 @@ def write_csv(skins, path):
 def write_xlsx(skins, profile, tier_counts, path):
     wb = Workbook()
     ws = wb.active
-    ws.title = i18n.t("sheet_skins")
+    ws.title = "Skins"
 
     dark = PatternFill("solid", fgColor="0A1428")
     gold_font = Font(bold=True, color="C8AA6E", size=11)
     thin = Side(style="thin", color="1E2D44")
 
-    headers = [
-        i18n.t("col_index"), i18n.t("col_champion"), i18n.t("col_skin"),
-        i18n.t("col_rarity"), i18n.t("col_chromas"), i18n.t("col_skin_id"),
-        i18n.t("col_splash"),
-    ]
-    ws.append(headers)
-    for c in range(1, len(headers) + 1):
+    ws.append(COLUMNS)
+    for c in range(1, len(COLUMNS) + 1):
         cell = ws.cell(row=1, column=c)
         cell.font = gold_font
         cell.fill = dark
@@ -96,7 +87,7 @@ def write_xlsx(skins, profile, tier_counts, path):
     ws.auto_filter.ref = f"A1:F{len(skins) + 1}"
 
     # ------------------------------------------------------------ summary --
-    ws2 = wb.create_sheet(i18n.t("sheet_summary"))
+    ws2 = wb.create_sheet("Summary")
     for letter, width in (("A", 24), ("B", 14), ("D", 22), ("E", 14)):
         ws2.column_dimensions[letter].width = width
 
@@ -105,25 +96,25 @@ def write_xlsx(skins, profile, tier_counts, path):
         cell.font = gold_font
         cell.fill = dark
 
-    heading(1, 1, i18n.t("xls_overview"))
+    heading(1, 1, "Overview")
     heading(1, 2, "")
     facts = [
-        (i18n.t("xls_player"),
+        ("Player",
          f"{profile.get('gameName', '')} #{profile.get('tagLine', '')}".strip()),
-        (i18n.t("xls_level"), profile.get("level")),
-        (i18n.t("xls_skins_total"), len(skins)),
-        (i18n.t("xls_champs_with_skin"), len({s["champion"] for s in skins})),
-        (i18n.t("xls_champs_owned"), profile.get("championsOwned")),
-        (i18n.t("xls_chromas_owned"), profile.get("chromasOwned")),
-        (i18n.t("xls_export_date"), date.today().strftime("%d.%m.%Y")),
+        ("Level", profile.get("level")),
+        ("Skins total", len(skins)),
+        ("Champions with skins", len({s["champion"] for s in skins})),
+        ("Champions owned", profile.get("championsOwned")),
+        ("Chromas owned", profile.get("chromasOwned")),
+        ("Export date", date.today().strftime("%d.%m.%Y")),
     ]
     for i, (key, value) in enumerate(facts, start=2):
         ws2.cell(row=i, column=1, value=key).font = Font(bold=True)
         ws2.cell(row=i, column=2, value=value)
 
     row = len(facts) + 3
-    heading(row, 1, i18n.t("col_rarity"))
-    heading(row, 2, i18n.t("col_count"))
+    heading(row, 1, "Rarity")
+    heading(row, 2, "Count")
     for tier in TIERS:
         row += 1
         cell = ws2.cell(row=row, column=1, value=tier)
@@ -131,11 +122,11 @@ def write_xlsx(skins, profile, tier_counts, path):
         cell.font = Font(bold=True, color="0A1428")
         ws2.cell(row=row, column=2, value=tier_counts.get(tier, 0))
     row += 1
-    ws2.cell(row=row, column=1, value=i18n.t("xls_no_tier")).font = Font(color="8A8A8A")
+    ws2.cell(row=row, column=1, value="No tier").font = Font(color="8A8A8A")
     ws2.cell(row=row, column=2, value=tier_counts.get("", 0))
 
-    heading(1, 4, i18n.t("col_champion"))
-    heading(1, 5, i18n.t("col_count"))
+    heading(1, 4, "Champion")
+    heading(1, 5, "Count")
     counts = {}
     for skin in skins:
         counts[skin["champion"]] = counts.get(skin["champion"], 0) + 1

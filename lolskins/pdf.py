@@ -1,4 +1,4 @@
-"""Builds the PDF catalog: cover, summary, then a grid of splash art."""
+"""Builds the PDF catalog: cover, champion roster, then a grid of splash art."""
 
 import math
 import os
@@ -10,7 +10,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import i18n, theme
+from . import theme
 from .theme import (
     BACKGROUND, GOLD, GOLD_DARK, PANEL, ROW_ODD, TEXT, TEXT_DIM, TIERS,
     TIER_COLOR, circular_image, diamond, draw_gem, page_background, page_frame,
@@ -19,6 +19,13 @@ from .theme import (
 
 SPLASH_RATIO = 717 / 1215
 PROJECT_URL = "https://github.com/xlzipx/lol-skin-catalog"
+FOOTER_NOTE = ("Generated with LoL Skin Catalog — a free, open-source tool "
+               "for exporting the skins you own.")
+
+
+def chroma_label(count):
+    """'1 chroma' / '6 chromas'."""
+    return f"{count} chroma" if count == 1 else f"{count} chromas"
 
 
 def _display_name(profile):
@@ -77,10 +84,10 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
 
     y -= 18 * mm
     c.setFillColorRGB(*GOLD)
-    tracked_text(c, W / 2, y, i18n.t("pdf_game"), theme.FONT_DISPLAY_BOLD, 15, 3.2, "center")
+    tracked_text(c, W / 2, y, "LEAGUE OF LEGENDS", theme.FONT_DISPLAY_BOLD, 15, 3.2, "center")
     y -= 7.5 * mm
     c.setFillColorRGB(*TEXT_DIM)
-    tracked_text(c, W / 2, y, i18n.t("pdf_subtitle"), theme.FONT, 9, 3.6, "center")
+    tracked_text(c, W / 2, y, "OWNED SKINS COLLECTION", theme.FONT, 9, 3.6, "center")
 
     # headline count
     y_circle = y - 40 * mm
@@ -100,8 +107,8 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     c.setFont(theme.FONT_DISPLAY_BOLD, 40)
     c.drawCentredString(W / 2, y_circle + 1 * mm, str(len(skins)))
     c.setFillColorRGB(*TEXT)
-    tracked_text(c, W / 2, y_circle - 9 * mm, i18n.t("pdf_total_1"), theme.FONT, 7.5, 2.2, "center")
-    tracked_text(c, W / 2, y_circle - 13.5 * mm, i18n.t("pdf_total_2"), theme.FONT, 7.5, 2.2, "center")
+    tracked_text(c, W / 2, y_circle - 9 * mm, "TOTAL SKINS", theme.FONT, 7.5, 2.2, "center")
+    tracked_text(c, W / 2, y_circle - 13.5 * mm, "OWNED", theme.FONT, 7.5, 2.2, "center")
 
     # rarity strip
     y_gem = y_circle - r - 26 * mm
@@ -109,13 +116,13 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     x0 = W / 2 - step * (len(TIERS) - 1) / 2
     for i, tier in enumerate(TIERS):
         x = x0 + i * step
-        draw_gem(c, tier, x, y_gem, 4.6 * mm)
+        draw_gem(c, tier, x, y_gem, 5 * mm)
         c.setFillColorRGB(*TEXT)
-        c.setFont(theme.FONT_DISPLAY_BOLD, 12)
-        c.drawCentredString(x, y_gem - 12 * mm, str(tier_counts.get(tier, 0)))
+        c.setFont(theme.FONT_DISPLAY_BOLD, 16)
+        c.drawCentredString(x, y_gem - 13 * mm, str(tier_counts.get(tier, 0)))
         c.setFillColorRGB(*TEXT_DIM)
-        c.setFont(theme.FONT, 5.6)
-        c.drawCentredString(x, y_gem - 16.5 * mm, tier.upper())
+        c.setFont(theme.FONT, 7.2)
+        c.drawCentredString(x, y_gem - 19 * mm, tier.upper())
 
     # secondary stats
     y_rule = y_gem - 30 * mm
@@ -124,11 +131,11 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     c.line(W / 2 - 48 * mm, y_rule, W / 2 + 48 * mm, y_rule)
 
     stats = [
-        (str(len({s["champion"] for s in skins})), i18n.t("pdf_champions")),
-        (str(profile.get("chromasOwned") or 0), i18n.t("pdf_chromas")),
-        (str(profile.get("championsOwned") or 0), i18n.t("pdf_champs_owned")),
+        (str(len({s["champion"] for s in skins})), "CHAMPIONS WITH SKINS"),
+        (str(profile.get("chromasOwned") or 0), "CHROMAS"),
+        (str(profile.get("championsOwned") or 0), "CHAMPIONS OWNED"),
     ]
-    step2 = 38 * mm
+    step2 = 46 * mm
     x0 = W / 2 - step2 * (len(stats) - 1) / 2
     for i, (value, label) in enumerate(stats):
         x = x0 + i * step2
@@ -141,7 +148,7 @@ def _cover(c, W, H, skins, profile, tier_counts, icon):
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 7)
     c.drawCentredString(W / 2, 18 * mm,
-                        i18n.t("pdf_generated", date=date.today().strftime("%d. %m. %Y")))
+                        "Generated " + date.today().strftime("%d. %m. %Y"))
     c.showPage()
 
 
@@ -159,7 +166,7 @@ def _footer(c, W, H, margin):
 
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 6.6)
-    c.drawCentredString(W / 2, y - 6 * mm, i18n.t("pdf_footer"))
+    c.drawCentredString(W / 2, y - 6 * mm, FOOTER_NOTE)
 
     label = PROJECT_URL.replace("https://", "")
     c.setFillColorRGB(*GOLD)
@@ -176,7 +183,7 @@ def _page_header(c, W, H, margin, name, page, total):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, margin, H - margin - 5 * mm,
-                 i18n.t("pdf_header", name=name), theme.FONT_DISPLAY_BOLD, 10, 1.8)
+                 f"{name}'S OWNED SKINS", theme.FONT_DISPLAY_BOLD, 10, 1.8)
     c.setFillColorRGB(*TEXT_DIM)
     c.setFont(theme.FONT, 7.5)
     c.drawRightString(W - margin, H - margin - 5 * mm, f"{page} / {total}")
@@ -189,61 +196,44 @@ def _page_header(c, W, H, margin, name, page, total):
     diamond(c, W / 2, y, 1.4 * mm, GOLD, filled=False)
 
 
-# --------------------------------------------------------------- summary ----
+# ------------------------------------------------------- champion roster ----
 
 
-def _summary(c, W, H, margin, skins, tier_counts, name, total_pages):
+def _roster(c, W, H, margin, skins, name, total_pages):
+    """Every champion with the number of skins owned, in striped columns.
+
+    Rarity totals deliberately live on the cover only - repeating the gems
+    here would just duplicate the page before.
+    """
     _page_header(c, W, H, margin, name, 2, total_pages)
-    c.setFillColorRGB(*TEXT)
-    tracked_text(c, margin, H - margin - 20 * mm, i18n.t("pdf_summary"),
-                 theme.FONT_DISPLAY_BOLD, 13, 2.4)
 
-    # ---- rarity band across the full width ----
-    c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 8)
-    c.drawString(margin, H - margin - 29 * mm, i18n.t("pdf_by_rarity"))
-
-    y_gem = H - margin - 41 * mm
-    step_x = (W - 2 * margin) / len(TIERS)
-    x0 = margin + step_x / 2
-    for i, tier in enumerate(TIERS):
-        x = x0 + i * step_x
-        draw_gem(c, tier, x, y_gem, 4.4 * mm)
-        c.setFillColorRGB(*GOLD)
-        c.setFont(theme.FONT_DISPLAY_BOLD, 15)
-        c.drawCentredString(x, y_gem - 11.5 * mm, str(tier_counts.get(tier, 0)))
-        c.setFillColorRGB(*TEXT_DIM)
-        c.setFont(theme.FONT, 6.8)
-        c.drawCentredString(x, y_gem - 16.5 * mm, tier.upper())
-
-    y_rule = y_gem - 22 * mm
-    c.setStrokeColorRGB(*GOLD_DARK)
-    c.setLineWidth(0.5)
-    c.line(margin, y_rule, W - margin, y_rule)
-    c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 8)
-    c.drawRightString(W - margin, y_rule - 5.5 * mm,
-                      f"{i18n.t('pdf_no_tier')}: {tier_counts.get('', 0)}")
-
-    # ---- champion table, four striped columns over the full width ----
     counts = {}
     for skin in skins:
         counts[skin["champion"]] = counts.get(skin["champion"], 0) + 1
     names = sorted(counts, key=str.lower)
 
+    c.setFillColorRGB(*TEXT)
+    tracked_text(c, margin, H - margin - 21 * mm, "SKINS BY CHAMPION",
+                 theme.FONT_DISPLAY_BOLD, 14, 2.6)
     c.setFillColorRGB(*TEXT_DIM)
-    c.setFont(theme.FONT, 8)
-    c.drawString(margin, y_rule - 5.5 * mm, i18n.t("pdf_by_champion", count=len(names)))
+    c.setFont(theme.FONT, 8.5)
+    c.drawString(margin, H - margin - 27.5 * mm,
+                 f"{len(names)} champions · {len(skins)} skins owned")
+
+    y_rule = H - margin - 32 * mm
+    c.setStrokeColorRGB(*GOLD_DARK)
+    c.setLineWidth(0.5)
+    c.line(margin, y_rule, W - margin, y_rule)
 
     columns = 4
     col_w = (W - 2 * margin) / columns
-    y_top = y_rule - 13 * mm
+    y_top = y_rule - 9 * mm
     bottom = margin + 4 * mm
 
     per_column = math.ceil(len(names) / columns)
-    step = min(7 * mm, (y_top - bottom) / max(1, per_column - 1))
-    # shrink the type only if a very large collection needs tighter rows
-    size = max(6.4, min(9.4, step / mm * 1.45))
+    step = min(8 * mm, (y_top - bottom) / max(1, per_column - 1))
+    # the type only shrinks when a very large collection needs tighter rows
+    size = max(6.4, min(10.0, step / mm * 1.35))
 
     for i, champion in enumerate(names):
         col, row = divmod(i, per_column)
@@ -254,7 +244,7 @@ def _summary(c, W, H, margin, skins, tier_counts, name, total_pages):
             c.rect(x, y - step * 0.32, col_w - 3 * mm, step, fill=1, stroke=0)
         c.setFillColorRGB(*TEXT)
         c.setFont(theme.FONT, size)
-        c.drawString(x + 2 * mm, y, champion)
+        c.drawString(x + 2.5 * mm, y, champion)
         c.setFillColorRGB(*GOLD)
         c.setFont(theme.FONT_BOLD, size)
         c.drawRightString(x + col_w - 5.5 * mm, y, str(counts[champion]))
@@ -293,7 +283,7 @@ def build(skins, profile, tier_counts, icon, path):
     total_pages = grid_pages + 2
 
     _cover(c, W, H, skins, profile, tier_counts, icon)
-    _summary(c, W, H, margin, skins, tier_counts, name, total_pages)
+    _roster(c, W, H, margin, skins, name, total_pages)
 
     for idx, skin in enumerate(skins):
         slot = idx % per_page
@@ -340,7 +330,7 @@ def build(skins, profile, tier_counts, icon, path):
         c.setFont(theme.FONT, 6.6)
         caption = skin["champion"]
         if skin.get("chromas"):
-            caption += " · " + i18n.chromas(skin["chromas"])
+            caption += " · " + chroma_label(skin["chromas"])
         c.drawString(x_text, y_text - 3.6 * mm, caption)
 
         if idx == len(skins) - 1:

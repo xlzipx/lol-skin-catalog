@@ -167,11 +167,11 @@ def draw_gem(c, tier, cx, cy, r):
         _polygon(c, [(cx, cy), lower_right, lower_left], dark)
 
     elif tier == "Legendary":
-        # four sides
-        rhombus = [(cx, cy + r), (cx + r * 0.72, cy), (cx, cy - r), (cx - r * 0.72, cy)]
+        # four sides, as wide as it is tall
+        rhombus = [(cx, cy + r), (cx + r, cy), (cx, cy - r), (cx - r, cy)]
         _polygon(c, rhombus, color)
-        _polygon(c, [(cx, cy + r), (cx + r * 0.72, cy), (cx, cy)], light)
-        _polygon(c, [(cx, cy - r), (cx - r * 0.72, cy), (cx, cy)], dark)
+        _polygon(c, [(cx, cy + r), (cx + r, cy), (cx, cy)], light)
+        _polygon(c, [(cx, cy - r), (cx - r, cy), (cx, cy)], dark)
 
     elif tier == "Epic":
         triangle = [(cx, cy + r), (cx + r * 0.92, cy - r * 0.72), (cx - r * 0.92, cy - r * 0.72)]
