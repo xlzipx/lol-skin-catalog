@@ -8,9 +8,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 # ------------------------------------------------------------- palette ----
 
-BACKGROUND = (0.039, 0.078, 0.157)   # hextech navy
-PANEL = (0.063, 0.110, 0.196)
-ROW_ODD = (0.055, 0.098, 0.176)      # subtle zebra stripe
+BACKGROUND = (0.012, 0.063, 0.102)   # #03101a - deep hextech teal
+BACKGROUND_TOP = (0.012, 0.122, 0.173)  # #031f2c - the page fades up into this
+PANEL = (0.024, 0.145, 0.204)
+ROW_ODD = (0.020, 0.118, 0.161)      # subtle zebra stripe
 GOLD = (0.784, 0.667, 0.431)         # #C8AA6E
 GOLD_DARK = (0.310, 0.259, 0.169)
 TEXT = (0.941, 0.945, 0.949)
@@ -213,9 +214,69 @@ def tracked_text(c, x, y, text, font, size, tracking, align="left"):
     return width
 
 
+_TEXTURE = None
+
+
+def _mix(a, b, t):
+    return tuple(round(255 * (x + (y - x) * t)) for x, y in zip(a, b))
+
+
+def build_texture(width_px=1240, height_px=1754, seed=7):
+    """Paints the page backdrop once: a vertical fade plus soft light streaks.
+
+    Blurred glows are painful to express as vector art, so the backdrop is a
+    raster image that every page reuses - reportlab embeds it a single time.
+    """
+    import math as _math
+    import random as _random
+
+    from PIL import Image, ImageDraw, ImageFilter
+
+    base = Image.new("RGB", (width_px, height_px))
+    painter = ImageDraw.Draw(base)
+    for y in range(height_px):
+        t = y / max(1, height_px - 1)
+        # darkest at the very top, easing into the lighter teal lower down
+        painter.line([(0, y), (width_px, y)], fill=_mix(BACKGROUND_TOP, BACKGROUND, t ** 0.75))
+
+    # soft curved streaks, the way light drifts across the client's backdrop
+    glow = Image.new("L", (width_px, height_px), 0)
+    pen = ImageDraw.Draw(glow)
+    rng = _random.Random(seed)
+    for _ in range(7):
+        y0 = rng.uniform(0.15, 0.95) * height_px
+        amplitude = rng.uniform(0.04, 0.13) * height_px
+        phase = rng.uniform(0, _math.tau)
+        length = rng.uniform(0.55, 1.15)
+        thickness = int(rng.uniform(3, 9))
+        brightness = int(rng.uniform(70, 165))
+        points = []
+        steps = 240
+        for i in range(steps + 1):
+            t = i / steps
+            x = (t * length - 0.1) * width_px
+            y = y0 + amplitude * _math.sin(phase + t * _math.pi * 1.3)
+            points.append((x, y))
+        pen.line(points, fill=brightness, width=thickness, joint="curve")
+
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=width_px * 0.022))
+    tint = Image.new("RGB", (width_px, height_px), (86, 214, 226))
+    base = Image.composite(tint, base, glow.point(lambda v: int(v * 0.42)))
+    return base.filter(ImageFilter.GaussianBlur(radius=1.2))
+
+
+def texture_reader(path=None):
+    """Cached ImageReader so the backdrop is embedded in the PDF only once."""
+    global _TEXTURE
+    if _TEXTURE is None:
+        from reportlab.lib.utils import ImageReader
+
+        _TEXTURE = ImageReader(build_texture())
+    return _TEXTURE
+
+
 def page_background(c, W, H):
-    c.setFillColorRGB(*BACKGROUND)
-    c.rect(0, 0, W, H, fill=1, stroke=0)
+    c.drawImage(texture_reader(), 0, 0, width=W, height=H)
 
 
 def page_frame(c, W, H, margin):

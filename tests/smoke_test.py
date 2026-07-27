@@ -271,6 +271,65 @@ def test_internal_links():
               len(reader.pages) not in back)
 
 
+def _image_boxes(page):
+    """Rectangles where images were placed, read from the content stream."""
+    import re
+
+    data = page.get_contents().get_data().decode("latin-1")
+    pattern = re.compile(
+        r"([\d.eE+-]+) 0 0 ([\d.eE+-]+) ([\d.eE+-]+) ([\d.eE+-]+) cm\s*/\S+ Do")
+    boxes = []
+    for w, h, x, y in pattern.findall(data):
+        boxes.append((float(x), float(y), float(x) + float(w), float(y) + float(h)))
+    return boxes
+
+
+def test_nothing_falls_off_the_page():
+    """A column count leaking between grids once pushed half of every skin
+    page past the right edge; this keeps every drawn image on the paper."""
+    print("artwork stays on the page")
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        print("  skip  pypdf not installed")
+        return
+
+    from PIL import Image as PILImage
+
+    skins = fake_skins(40)
+    counts = {}
+    for skin in skins:
+        counts[skin["rarity"]] = counts.get(skin["rarity"], 0) + 1
+    icons = fake_collectibles(30, "icon")
+    wards = fake_collectibles(9, "ward")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        # real thumbnails, otherwise nothing is drawn and the check is vacuous
+        art = os.path.join(tmp, "art.jpg")
+        PILImage.new("RGB", (460, 259), (40, 60, 90)).save(art)
+        for item in skins + icons + wards:
+            item["thumb"] = art
+
+        path = os.path.join(tmp, "Skins.pdf")
+        pdf.build(skins, FAKE_PROFILE, counts, None, path,
+                  icons=icons, wards=wards)
+        reader = PdfReader(path)
+
+        strays, placed = [], 0
+        for i, page in enumerate(reader.pages):
+            right = float(page.mediabox.width)
+            top = float(page.mediabox.height)
+            for x0, y0, x1, y1 in _image_boxes(page):
+                placed += 1
+                if x0 < -1 or y0 < -1 or x1 > right + 1 or y1 > top + 1:
+                    strays.append((i + 1, round(x0), round(x1)))
+
+        # the count guards the check itself: no artwork parsed would mean the
+        # test silently proves nothing
+        check("artwork was actually placed", placed >= len(skins), placed)
+        check("every image sits inside the page", not strays, strays[:4])
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -285,7 +344,7 @@ if __name__ == "__main__":
                  test_large_collection_fits, test_format_selection,
                  test_cache_freshness, test_grid_planning, test_date_order,
                  test_collection_sections, test_internal_links,
-                 test_english_only):
+                 test_nothing_falls_off_the_page, test_english_only):
         test()
 
     print()

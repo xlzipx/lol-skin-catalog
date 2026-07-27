@@ -4,6 +4,28 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-07-27
+
+### Fixed
+
+- **Half of every skin page was drawn off the paper.** A loop added in 1.4.0
+  reused the variable holding the skin grid's column count, so the grid laid
+  cards out in six columns instead of three and three of them fell past the
+  right edge. Pages carried all fifteen cards but only nine were visible.
+  Releases 1.4.0 and 1.4.1 are affected; regenerate your catalog with this
+  version.
+
+### Added
+
+- A regression test that reads back where every image was placed and fails if
+  any of it lands outside the page.
+
+### Changed
+
+- New page backdrop: a vertical fade from `#031f2c` down to `#03101a` with
+  soft teal light streaks, echoing the client's own background. Card panels
+  and roster stripes were retuned to match.
+
 ## [1.4.1] — 2026-07-27
 
 ### Changed
@@ -135,6 +157,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.5.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.0
 [1.4.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.1
 [1.4.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.4.0
 [1.3.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.3.1

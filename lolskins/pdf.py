@@ -51,15 +51,6 @@ def _thumb_ratio(skins, default=SPLASH_RATIO):
 
 def _cover(c, W, H, skins, profile, tier_counts, icon, contents=None):
     page_background(c, W, H)
-
-    # soft glow along the top edge
-    for i in range(60):
-        k = 1 - i / 60
-        c.setFillColorRGB(BACKGROUND[0] + 0.05 * k,
-                          BACKGROUND[1] + 0.06 * k,
-                          BACKGROUND[2] + 0.08 * k)
-        c.rect(0, H - (i + 1) * H / 140, W, H / 140 + 0.6, fill=1, stroke=0)
-
     page_frame(c, W, H, 12 * mm)
 
     y_icon = H - 52 * mm
@@ -469,8 +460,10 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
     for kind, items in collections.items():
         if not items:
             continue
-        columns, _, _, cell_h = _geometry(W, margin, kind)
-        plans[kind] = _plan_grid(len(items), columns, cell_h,
+        # distinct names: `columns` above belongs to the skin grid and must
+        # survive this loop untouched
+        tile_columns, _, _, cell_h = _geometry(W, margin, kind)
+        plans[kind] = _plan_grid(len(items), tile_columns, cell_h,
                                  body_h - 18 * mm, body_h)
 
     total_pages = grid_pages + 2 + sum(len(p) for p in plans.values())
