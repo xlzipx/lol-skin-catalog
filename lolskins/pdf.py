@@ -509,20 +509,16 @@ def _card_front(c, x, y_top, card_w, padding, img_w, img_h, tier):
         pass
     c.restoreState()
 
-    # hairline between art and caption, brightest under the gem
-    c.setStrokeColorRGB(*_tinted(PANEL, accent, 0.55 * strength))
-    c.setLineWidth(0.5)
+    # hairline where the art meets the caption; the gem sits on top of it
+    c.setStrokeColorRGB(*accent)
+    c.setLineWidth(0.7 if tier else 0.45)
     c.line(x + padding, caption_top, x + padding + img_w, caption_top)
-    c.setStrokeColorRGB(*accent)
-    c.setLineWidth(1.1)
-    c.line(x + padding, caption_top, x + padding + 7 * mm, caption_top)
 
-    c.setStrokeColorRGB(*accent)
-    c.setLineWidth(0.8 if tier else 0.5)
+    c.setLineWidth(0.7 if tier else 0.45)
     c.rect(x + padding, caption_top, img_w, img_h, fill=0, stroke=1)
 
-    arm = 3.6 * mm
-    c.setLineWidth(1.4 if tier else 0.9)
+    arm = min(3.6 * mm, img_w * 0.18)
+    c.setLineWidth(1.2 if tier else 0.8)
     for side in (-1, 1):
         cx = x + padding + (img_w if side > 0 else 0)
         c.line(cx, art_top, cx - side * arm, art_top)
@@ -537,11 +533,13 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
 
     W, H = A4
     margin = 12 * mm
-    columns = 3
-    gap = 5 * mm
+    # square art packs far denser than the old landscape crop: five across and
+    # five down puts 25 skins on a page instead of 15
+    columns = 5
+    gap = 4 * mm
     header_h = 16 * mm
-    padding = 1.8 * mm
-    text_h = 9.5 * mm
+    padding = 1.5 * mm
+    text_h = 9 * mm
 
     name = _header_name(profile)
 
@@ -622,28 +620,33 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
 
         _card_front(c, x, y_top, card_w, padding, img_w, img_h, tier)
 
-        y_text = y_top - padding - img_h - 4.4 * mm
-        x_text = x + padding
-        if tier:
-            draw_gem(c, tier, x_text + 1.7 * mm, y_text + 0.9 * mm, 1.9 * mm)
-        x_text += 5 * mm
+        centre = x + card_w / 2
+        art_bottom = y_top - padding - img_h
 
-        text_w = card_w - padding - (x_text - x)
+        # the gem straddles the bottom edge of the art, as it does in game
+        if tier:
+            c.setFillColorRGB(*_tinted(PANEL, TIER_COLOR[tier], 0.18))
+            c.circle(centre, art_bottom, 2.5 * mm, fill=1, stroke=0)
+            draw_gem(c, tier, centre, art_bottom, 1.8 * mm)
+
+        text_w = card_w - 2 * padding
         c.setFillColorRGB(*TEXT)
-        c.setFont(theme.FONT_BOLD, 7.6)
+        c.setFont(theme.FONT_BOLD, 6.4)
         label = skin["skin"]
-        while c.stringWidth(label, theme.FONT_BOLD, 7.6) > text_w and len(label) > 4:
+        while c.stringWidth(label, theme.FONT_BOLD, 6.4) > text_w and len(label) > 4:
             label = label[:-2]
         if label != skin["skin"]:
             label = label[:-1] + "…"
-        c.drawString(x_text, y_text, label)
+        c.drawCentredString(centre, art_bottom - 5 * mm, label)
 
         c.setFillColorRGB(*TEXT_DIM)
-        c.setFont(theme.FONT, 6.6)
+        c.setFont(theme.FONT, 5.6)
         caption = skin["champion"]
         if skin.get("chromas"):
             caption += " · " + chroma_label(skin["chromas"])
-        c.drawString(x_text, y_text - 3.6 * mm, caption)
+        while c.stringWidth(caption, theme.FONT, 5.6) > text_w and len(caption) > 4:
+            caption = caption[:-2]
+        c.drawCentredString(centre, art_bottom - 8.2 * mm, caption)
 
         if idx == len(skins) - 1 and not plans:
             _footer(c, W, H, margin)

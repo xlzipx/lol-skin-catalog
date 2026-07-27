@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] — 2026-07-27
+
+### Changed
+
+- **Skin cards now show a square crop**, the way the client's own collection
+  cards do. It comes from Riot's square tile art rather than a crop guessed out
+  of the splash: the tile is framed on the champion by hand, ships at exactly
+  the 380 px the card wants, and downloads at a third of the weight. Skins
+  without a tile fall back to a centred crop of the splash.
+- **Cards are smaller and pack five across and five down**, 25 skins to a page
+  instead of 15. The skin section drops from 19 pages to 11, and the catalog
+  as a whole from 26 to 18.
+- **The rarity gem straddles the bottom edge of the art**, as it does in game,
+  which frees the full card width for the skin name. Name and champion are
+  centred under it.
+- Embedded art is 380 px square, roughly 310 DPI at the new card size, stored
+  at a quality that costs about 3/255 against Riot's original and a quarter of
+  the bytes.
+- A PDF-only export now fetches the small tile instead of the full splash, so
+  it finishes considerably faster.
+
 ## [1.7.0] — 2026-07-27
 
 ### Changed
@@ -200,6 +221,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.8.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.8.0
 [1.7.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.7.0
 [1.6.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.6.0
 [1.5.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.5.1

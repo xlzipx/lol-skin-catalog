@@ -17,10 +17,11 @@ CDRAGON = (
     "/rcp-be-lol-game-data/global/default"
 )
 
-SPLASH_WIDTH = 720   # what is kept in splashes/
-# What gets embedded into the PDF and XLSX. A catalog card is about 55 mm
-# wide, so 460 px lands at roughly 210 DPI - crisp in print and on screen.
-THUMB_WIDTH = 460
+SPLASH_WIDTH = 720   # what is kept in splashes/, full uncropped art
+# Catalog cards use Riot's own square tile, which ships at exactly 380 px.
+# Across a 31 mm card that is about 310 DPI, so it is taken at native size -
+# no resampling at all.
+THUMB_WIDTH = 380
 
 
 def fetch_rarities(log=print):
@@ -168,33 +169,49 @@ def download_splashes(skins, base=None, log=print, keep_full=True, need_thumbs=T
         skin["file"] = os.path.join(splashes, name) if splashes else None
         skin["thumb"] = os.path.join(thumbs, name) if thumbs else None
 
-        wanted = [(skin[key], width) for key, width in
-                  (("file", SPLASH_WIDTH), ("thumb", THUMB_WIDTH)) if skin[key]]
-        if all(_is_current(target, width) for target, width in wanted):
+        # Two different sources: the wide splash for splashes/, and Riot's own
+        # square tile for the catalog card. The tile is hand-framed on the
+        # champion, so it beats guessing a crop out of the splash.
+        jobs = []
+        if skin["file"] and not _is_current(skin["file"], SPLASH_WIDTH):
+            jobs.append(("file", skin.get("splashPath") or skin.get("tilePath"),
+                         SPLASH_WIDTH, False))
+        if skin["thumb"] and not _is_current(skin["thumb"], THUMB_WIDTH):
+            jobs.append(("thumb", skin.get("tilePath") or skin.get("splashPath"),
+                         THUMB_WIDTH, True))
+        if not jobs:
             continue
 
-        path = skin.get("splashPath") or skin.get("tilePath")
-        if not path:
-            skin["file"] = skin["thumb"] = None
-            continue
-
-        url = CDRAGON + path.lower().replace("/lol-game-data/assets", "")
-        try:
-            r = session.get(url, timeout=60)
-            if r.status_code != 200:
-                log(f"[{i}] HTTP {r.status_code}: {name}")
-                skin["file"] = skin["thumb"] = None
+        for key, path, width, square in jobs:
+            if not path:
+                skin[key] = None
                 continue
-            img = Image.open(io.BytesIO(r.content)).convert("RGB")
-            for target, width in wanted:
-                if _is_current(target, width):
+            url = CDRAGON + path.lower().replace("/lol-game-data/assets", "")
+            try:
+                r = session.get(url, timeout=60)
+                if r.status_code != 200:
+                    log(f"[{i}] HTTP {r.status_code}: {name}")
+                    skin[key] = None
                     continue
-                height = max(1, round(img.height * width / img.width))
-                img.resize((width, height), Image.LANCZOS).save(
-                    target, "JPEG", quality=88
-                )
-            if i % 25 == 0 or i == len(skins):
-                log(f"  downloaded {i}/{len(skins)}")
-        except Exception as e:
-            log(f"[{i}] {name}: {e}")
-            skin["file"] = skin["thumb"] = None
+                img = Image.open(io.BytesIO(r.content)).convert("RGB")
+                if square:
+                    if img.width != img.height:
+                        # only reached when a skin has no tile and we fall back
+                        side = min(img.width, img.height)
+                        left = (img.width - side) // 2
+                        top = (img.height - side) // 2
+                        img = img.crop((left, top, left + side, top + side))
+                    if img.size != (width, width):
+                        img = img.resize((width, width), Image.LANCZOS)
+                else:
+                    height = max(1, round(img.height * width / img.width))
+                    img = img.resize((width, height), Image.LANCZOS)
+                # 86 costs about 3/255 against Riot's original and saves a
+                # quarter of the bytes - invisible on a 31 mm card
+                img.save(skin[key], "JPEG", quality=86, optimize=True)
+            except Exception as e:
+                log(f"[{i}] {name}: {e}")
+                skin[key] = None
+
+        if i % 25 == 0 or i == len(skins):
+            log(f"  downloaded {i}/{len(skins)}")

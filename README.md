@@ -111,6 +111,10 @@ from [Community Dragon](https://communitydragon.org), a public community mirror
 of the game's asset files. These are ordinary HTTPS downloads of public images
 — no account, no login, no tokens.
 
+Catalog cards use Riot's square tile art, which is framed on the champion by
+hand and ships at exactly the size the card needs. The wide splash is fetched
+only when you ask for the `splashes/` folder.
+
 The inventory endpoints hand back nothing but item ids, so the names and
 pictures for icons and wards are matched up from there, and rarity has to come
 from there too because the client's own field for it comes back empty.
