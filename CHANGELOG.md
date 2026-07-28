@@ -4,6 +4,22 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] — 2026-07-28
+
+### Changed
+
+- The window now closes by itself a few seconds after a successful export.
+  A failed run still waits for Enter, because an error nobody gets to read is
+  no better than a silent failure. `--keep-open` restores the old behaviour.
+
+### Added
+
+- macOS: the running client is found through `ps`, the same way it is found on
+  Windows, instead of relying on the lockfile alone.
+- Fonts are looked for on macOS and Linux too, not only in the Windows font
+  folder, so headings keep their serif face off Windows.
+- The finished PDF opens with `open` on macOS and `xdg-open` on Linux.
+
 ## [1.9.0] — 2026-07-28
 
 Found while auditing what each export leaves on disk.
@@ -242,6 +258,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.10.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.10.0
 [1.9.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.9.0
 [1.8.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.8.0
 [1.7.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.7.0

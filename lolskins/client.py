@@ -54,18 +54,24 @@ class ClientNotFound(RuntimeError):
 
 
 def _client_command_line():
-    """Command line of the running LeagueClientUx.exe (Windows), else ''."""
-    if os.name != "nt":
+    """Command line of the running League client, on Windows or macOS."""
+    if os.name == "nt":
+        commands = [
+            # PowerShell/CIM works on Win11 too, where wmic is gone
+            [
+                "powershell", "-NoProfile", "-NonInteractive", "-Command",
+                "Get-CimInstance Win32_Process -Filter \"Name='LeagueClientUx.exe'\""
+                " | Select-Object -ExpandProperty CommandLine",
+            ],
+            ["wmic", "process", "where", "name='LeagueClientUx.exe'",
+             "get", "commandline"],
+        ]
+    elif sys.platform == "darwin":
+        # ps prints the full argument list, which carries the same port and token
+        commands = [["ps", "-Ao", "args="]]
+    else:
         return ""
-    commands = [
-        # PowerShell/CIM works on Win11 too, where wmic is gone
-        [
-            "powershell", "-NoProfile", "-NonInteractive", "-Command",
-            "Get-CimInstance Win32_Process -Filter \"Name='LeagueClientUx.exe'\""
-            " | Select-Object -ExpandProperty CommandLine",
-        ],
-        ["wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline"],
-    ]
+
     for command in commands:
         try:
             out = subprocess.run(
@@ -78,6 +84,10 @@ def _client_command_line():
         except Exception:
             continue
         if out and "--app-port" in out:
+            # ps hands back every process, so keep the client's line alone
+            for line in out.splitlines():
+                if "--app-port" in line and "LeagueClientUx" in line:
+                    return line
             return out
     return ""
 

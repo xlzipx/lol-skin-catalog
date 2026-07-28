@@ -1,6 +1,7 @@
 """Colors, rarity tiers, fonts and the vector gem shapes used in the PDF."""
 
 import math
+import os
 
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
@@ -60,26 +61,58 @@ FONT_DISPLAY = "Helvetica"
 FONT_DISPLAY_BOLD = "Helvetica-Bold"
 
 
+# A humanist sans for text and a serif for display headings. Each role lists
+# candidates per platform; the first one present wins, and anything still
+# missing falls back to the Helvetica/Times built into every PDF reader.
+FONT_CANDIDATES = {
+    "FONT": ("UI", [
+        r"C:\Windows\Fonts\segoeui.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+    ]),
+    "FONT_BOLD": ("UIB", [
+        r"C:\Windows\Fonts\seguisb.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+    ]),
+    "FONT_DISPLAY": ("D", [
+        r"C:\Windows\Fonts\georgia.ttf",
+        "/System/Library/Fonts/Supplemental/Georgia.ttf",
+        "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        "/usr/share/fonts/TTF/DejaVuSerif.ttf",
+    ]),
+    "FONT_DISPLAY_BOLD": ("DB", [
+        r"C:\Windows\Fonts\georgiab.ttf",
+        "/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+        "/usr/share/fonts/TTF/DejaVuSerif-Bold.ttf",
+    ]),
+}
+
+
 def register_fonts():
-    """Segoe UI for text, Georgia for display headings. Falls back to Helvetica."""
+    """Picks the best fonts this machine has. Falls back to Helvetica/Times."""
     global FONT, FONT_BOLD, FONT_DISPLAY, FONT_DISPLAY_BOLD
-    wanted = [
-        ("UI", r"C:\Windows\Fonts\segoeui.ttf", "FONT"),
-        ("UIB", r"C:\Windows\Fonts\seguisb.ttf", "FONT_BOLD"),
-        ("D", r"C:\Windows\Fonts\georgia.ttf", "FONT_DISPLAY"),
-        ("DB", r"C:\Windows\Fonts\georgiab.ttf", "FONT_DISPLAY_BOLD"),
-    ]
     found = {}
-    for name, path, key in wanted:
-        try:
-            pdfmetrics.registerFont(TTFont(name, path))
-            found[key] = name
-        except Exception:
-            pass
+    for key, (name, candidates) in FONT_CANDIDATES.items():
+        for path in candidates:
+            if not os.path.exists(path):
+                continue
+            try:
+                pdfmetrics.registerFont(TTFont(name, path))
+                found[key] = name
+                break
+            except Exception:
+                continue
     FONT = found.get("FONT", FONT)
     FONT_BOLD = found.get("FONT_BOLD", FONT_BOLD)
     FONT_DISPLAY = found.get("FONT_DISPLAY", FONT_DISPLAY)
     FONT_DISPLAY_BOLD = found.get("FONT_DISPLAY_BOLD", FONT_DISPLAY_BOLD)
+    return found
 
 
 # -------------------------------------------------------------- shapes ----

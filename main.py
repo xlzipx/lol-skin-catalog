@@ -11,7 +11,9 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
+import time
 import traceback
 
 if os.name == "nt":
@@ -56,7 +58,9 @@ def parse_args(argv=None):
     p.add_argument("--lockfile", metavar="PATH",
                    help="path to the client's lockfile (only for odd installs)")
     p.add_argument("--no-pause", action="store_true",
-                   help="do not wait for Enter when finished")
+                   help="close at once when finished, without the countdown")
+    p.add_argument("--keep-open", action="store_true",
+                   help="wait for Enter when finished instead of closing")
     p.add_argument("--no-open", action="store_true",
                    help="do not open the PDF when finished")
     return p.parse_args(argv)
@@ -92,13 +96,41 @@ def ask_formats():
     return set(FORMATS)
 
 
-def pause(enabled, code=0):
-    if enabled:
+def pause(enabled, code=0, keep_open=False, seconds=6):
+    """Closes by itself when the export worked, waits when it did not.
+
+    An error nobody gets to read is no better than a silent failure, so a
+    failed run always holds the window open.
+    """
+    if not enabled:
+        sys.exit(code)
+    if code == 0 and not keep_open:
+        try:
+            for left in range(seconds, 0, -1):
+                print(f"\r  This window closes in {left}    ", end="", flush=True)
+                time.sleep(1)
+            print()
+        except Exception:
+            pass
+    else:
         try:
             input("\nPress Enter to close…")
         except Exception:
             pass
     sys.exit(code)
+
+
+def open_document(path):
+    """Show the finished PDF in whatever the platform uses."""
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", path], check=False)
+        elif os.name == "nt":
+            os.startfile(path)  # noqa: S606
+        else:
+            subprocess.run(["xdg-open", path], check=False)
+    except Exception:
+        pass
 
 
 def main(argv=None):
@@ -178,11 +210,8 @@ def main(argv=None):
 
     catalog = next((p for p in written if p.lower().endswith(".pdf")), None)
     if not args.no_open and catalog and os.path.exists(catalog):
-        try:
-            os.startfile(catalog)  # noqa: S606
-        except Exception:
-            pass
-    pause(wait, 0)
+        open_document(catalog)
+    pause(wait, 0, args.keep_open)
 
 
 def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
