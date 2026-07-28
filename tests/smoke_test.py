@@ -358,6 +358,45 @@ def test_output_names():
     check("path separators are stripped", "/" not in bad and ":" not in bad, bad)
 
 
+def test_page_numbering():
+    """Front matter is unnumbered; the roster table reaches the foot of its
+    page and would otherwise half-bury the digit."""
+    print("page numbering")
+    try:
+        import pypdfium2 as pdfium
+    except ImportError:
+        print("  skip  pypdfium2 not installed")
+        return
+
+    skins = fake_skins(60)
+    counts = {"Epic": 60}
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        path = os.path.join(tmp, "Skins.pdf")
+        pdf.build(skins, FAKE_PROFILE, counts, None, path)
+        doc = pdfium.PdfDocument(path)
+
+        def foot(index):
+            page = doc[index]
+            _, height = page.get_size()
+            tp = page.get_textpage()
+            out = []
+            for i in range(tp.count_rects()):
+                left, bottom, right, top = tp.get_rect(i)
+                if top < height * 0.10:
+                    out.append((left, tp.get_text_bounded(left, bottom, right, top)))
+            text = "".join(t for _, t in sorted(out)).strip()
+            tp.close()
+            page.close()
+            return text
+
+        roster, first_skins = foot(1), foot(2)
+        doc.close()
+
+        check("the roster carries no page number", not roster, roster)
+        check("numbering starts at 3 with the skins",
+              first_skins.startswith("3"), first_skins)
+
+
 def test_english_only():
     print("no leftover translation layer")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -373,7 +412,7 @@ if __name__ == "__main__":
                  test_cache_freshness, test_grid_planning, test_date_order,
                  test_collection_sections, test_internal_links,
                  test_nothing_falls_off_the_page, test_output_names,
-                 test_english_only):
+                 test_page_numbering, test_english_only):
         test()
 
     print()

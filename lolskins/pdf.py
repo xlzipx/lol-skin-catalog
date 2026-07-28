@@ -272,7 +272,8 @@ def _back_link(c, W, margin):
                    thickness=0)
 
 
-def _page_header(c, W, H, margin, name, page, total, section="COLLECTION"):
+def _page_header(c, W, H, margin, name, page, total, section="COLLECTION",
+                 numbered=True):
     page_background(c, W, H)
     c.setFillColorRGB(*GOLD)
     tracked_text(c, W / 2, H - margin - 5 * mm,
@@ -284,7 +285,8 @@ def _page_header(c, W, H, margin, name, page, total, section="COLLECTION"):
     c.line(margin, y, W / 2 - 3 * mm, y)
     c.line(W / 2 + 3 * mm, y, W - margin, y)
     diamond(c, W / 2, y, 1.4 * mm, GOLD, filled=False)
-    _page_number(c, W, margin, page)
+    if numbered:
+        _page_number(c, W, margin, page)
 
 
 # ------------------------------------------------------- champion roster ----
@@ -298,7 +300,10 @@ def _roster(c, W, H, margin, skins, name, total_pages, champion_pages=None):
     duplicate the page before.
     """
     champion_pages = champion_pages or {}
-    _page_header(c, W, H, margin, name, 2, total_pages, "CHAMPION ROSTER")
+    # the table reaches the foot of the page, so a number there would be half
+    # buried under the last row; numbering starts with the skins instead
+    _page_header(c, W, H, margin, name, 2, total_pages, "CHAMPION ROSTER",
+                 numbered=False)
     c.bookmarkPage("section-roster")
     c.addOutlineEntry("Champion roster", "section-roster", 0)
 
