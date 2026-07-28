@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.12.1] — 2026-07-28
+
+### Fixed
+
+- The two rarest tiers were the wrong way round. Transcendent comes first,
+  then Exalted. This ordering drives the cover strip and the Excel summary
+  alike, so both were affected.
+
+### Changed
+
+- The Rare gem is redrawn to belong with the six real ones: facets fanning
+  from a bright core, lit from the upper left, in the same box they occupy.
+  Riot publishes no artwork for that legacy tier, so it stays the one gem this
+  tool draws — nothing of theirs is bundled.
+
 ## [1.12.0] — 2026-07-28
 
 ### Changed
@@ -336,6 +351,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.12.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.1
 [1.12.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.0
 [1.11.3]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.3
 [1.11.2]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.2

@@ -18,8 +18,8 @@ GOLD_DARK = (0.310, 0.259, 0.169)
 TEXT = (0.941, 0.945, 0.949)
 TEXT_DIM = (0.494, 0.545, 0.588)
 
-# Ordered like the rarity strip in the client (rarest first).
-TIERS = ["Exalted", "Transcendent", "Ultimate", "Mythic", "Legendary", "Epic", "Rare"]
+# Ordered like the rarity strip in the client, rarest first.
+TIERS = ["Transcendent", "Exalted", "Ultimate", "Mythic", "Legendary", "Epic", "Rare"]
 
 TIER_COLOR = {
     "Exalted": (0.898, 0.878, 0.941),
@@ -234,13 +234,44 @@ def draw_gem(c, tier, cx, cy, r, image=None):
         _polygon(c, [(cx, cy + r), (cx, cy - r * 0.72), (cx - r * 0.92, cy - r * 0.72)], light)
 
     elif tier == "Rare":
-        # Riot ships no gem for this legacy tier, so it stays drawn. The box
-        # matches what their artwork occupies, roughly 2r wide by 1.9r tall,
-        # so it does not look undersized in the row.
-        _polygon(c, [(cx, cy + r * 0.95), (cx + r, cy),
-                     (cx, cy - r * 0.95), (cx - r, cy)], color)
-        _polygon(c, [(cx, cy + r * 0.95), (cx + r, cy), (cx, cy)], light)
-        _polygon(c, [(cx, cy - r * 0.95), (cx - r, cy), (cx, cy)], dark)
+        # Riot ships no gem for this legacy tier, so it stays drawn - built to
+        # sit in the same family as their artwork rather than copy it: a cut
+        # stone with facets fanning from a bright core, lit from the upper
+        # left, in a box the same size as theirs.
+        hw, hh = r, r * 0.95
+        edge = [
+            (cx, cy + hh),
+            (cx + hw * 0.54, cy + hh * 0.52),
+            (cx + hw, cy),
+            (cx + hw * 0.54, cy - hh * 0.52),
+            (cx, cy - hh),
+            (cx - hw * 0.54, cy - hh * 0.52),
+            (cx - hw, cy),
+            (cx - hw * 0.54, cy + hh * 0.52),
+        ]
+        for i in range(len(edge)):
+            a, b = edge[i], edge[(i + 1) % len(edge)]
+            # how much this facet faces the light, -1 away to +1 towards
+            mx = ((a[0] + b[0]) / 2 - cx) / hw
+            my = ((a[1] + b[1]) / 2 - cy) / hh
+            lit = 0.62 * my - 0.42 * mx
+            face = (_lighter(color, 0.12 + 0.62 * lit) if lit > 0
+                    else _darker(color, 0.10 + 0.5 * -lit))
+            _polygon(c, [(cx, cy), a, b], face)
+
+        _polygon(c, _star(cx, cy, 4, r * 0.36, r * 0.11), _lighter(color, 0.82))
+        _polygon(c, _star(cx, cy, 4, r * 0.17, r * 0.05), (1, 1, 1))
+
+        # rim: bright along the lit edges, dark along the shaded ones
+        c.setLineWidth(max(0.3, r * 0.07))
+        for i in range(len(edge)):
+            a, b = edge[i], edge[(i + 1) % len(edge)]
+            my = ((a[1] + b[1]) / 2 - cy) / hh
+            mx = ((a[0] + b[0]) / 2 - cx) / hw
+            c.setStrokeColorRGB(*(_lighter(color, 0.7)
+                                  if 0.62 * my - 0.42 * mx > 0
+                                  else _darker(color, 0.45)))
+            c.line(a[0], a[1], b[0], b[1])
 
 
 def diamond(c, cx, cy, r, color, filled=True):
