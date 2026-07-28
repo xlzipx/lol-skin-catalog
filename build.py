@@ -73,6 +73,19 @@ def build_exe(icon):
     return exe
 
 
+LAUNCHER = "Start on macOS.command"
+
+# Finder runs a .command in Terminal on double-click. Scripts are not held to
+# notarisation the way a compiled binary is, so this gets past the block that
+# stops the binary itself - it clears the quarantine flag macOS puts on
+# anything downloaded, then starts the program.
+LAUNCHER_BODY = """#!/bin/bash
+cd "$(dirname "$0")" || exit 1
+xattr -dr com.apple.quarantine "./LoL-Skin-Catalog" 2>/dev/null
+exec "./LoL-Skin-Catalog"
+"""
+
+
 def make_zip(exe):
     # not NAME: off Windows the binary has no extension, so a folder of that
     # name would collide with the executable sitting beside it
@@ -82,6 +95,9 @@ def make_zip(exe):
 
     shutil.copy(exe, staging)
     shutil.copy(os.path.join(HERE, "packaging", "README-FIRST.txt"), staging)
+    if sys.platform == "darwin":
+        with open(os.path.join(staging, LAUNCHER), "w", newline="\n") as f:
+            f.write(LAUNCHER_BODY)
     for name in SOURCE_FILES:
         source = os.path.join(HERE, name)
         if os.path.exists(source):
@@ -99,7 +115,7 @@ def make_zip(exe):
             for name in files:
                 path = os.path.join(root, name)
                 arcname = os.path.relpath(path, staging)
-                if name == BINARY and not WINDOWS:
+                if name in (BINARY, LAUNCHER) and not WINDOWS:
                     # zipfile drops the mode, and a binary without the execute
                     # bit is useless once unzipped
                     info = zipfile.ZipInfo.from_file(path, arcname)

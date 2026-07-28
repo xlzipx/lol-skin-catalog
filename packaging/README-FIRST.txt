@@ -51,12 +51,38 @@ WHAT YOU GET (next to the .exe)
 ON A MAC
 -----------------------------------------------------------
 
-  The program is called just "LoL-Skin-Catalog", with no
-  .exe on the end. Double-click it the same way.
+  Double-click "Start on macOS.command". Terminal opens and
+  the program runs. If macOS asks whether you are sure you
+  want to open a downloaded script, say yes.
 
-  macOS will refuse it the first time, because the program
-  is not signed with a paid Apple certificate. Right-click
-  it, choose Open, and confirm. You only do this once.
+  That launcher clears the quarantine flag macOS puts on
+  anything downloaded, then starts the program. It is doing
+  by itself what you would otherwise type in Terminal.
+
+  The program itself is called "LoL-Skin-Catalog", with no
+  .exe on the end. Opening it directly does not work: macOS
+  refuses and says Apple could not verify it. Nothing is
+  wrong with the download - it simply is not notarised,
+  which needs a paid Apple developer account.
+
+  If the launcher does not work either, allow the program
+  by hand, once:
+
+    1. Try to open it, then dismiss the warning.
+    2. Open System Settings > Privacy & Security.
+    3. Scroll down. There is a line saying LoL-Skin-Catalog
+       was blocked, with an "Open Anyway" button.
+    4. Click it and confirm with your password.
+
+  After that it starts normally and never asks again.
+
+  If you would rather use the Terminal, this does the same:
+
+    xattr -dr com.apple.quarantine ./LoL-Skin-Catalog
+
+  Note: on recent macOS versions, right-clicking and
+  choosing Open no longer works for this - Apple removed
+  that shortcut.
 
 
 WINDOWS MAY WARN YOU
