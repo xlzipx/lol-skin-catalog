@@ -48,6 +48,17 @@ WHAT YOU GET (next to the .exe)
   program from a command line with --clean.
 
 
+ON A MAC
+-----------------------------------------------------------
+
+  The program is called just "LoL-Skin-Catalog", with no
+  .exe on the end. Double-click it the same way.
+
+  macOS will refuse it the first time, because the program
+  is not signed with a paid Apple certificate. Right-click
+  it, choose Open, and confirm. You only do this once.
+
+
 WINDOWS MAY WARN YOU
 -----------------------------------------------------------
 

@@ -1,0 +1,57 @@
+name: macOS build
+
+# PyInstaller cannot cross-compile, so the Mac package has to be produced on a
+# Mac. Pushing a version tag builds it here and attaches it to that release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and attach the macOS package
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Smoke test before packaging anything
+        run: python tests/smoke_test.py
+
+      - name: Build
+        run: python build.py
+
+      - name: Check the binary actually starts
+        run: |
+          unzip -q dist/LoL-Skin-Catalog-macOS.zip -d /tmp/check
+          chmod +x "/tmp/check/LoL-Skin-Catalog"
+          "/tmp/check/LoL-Skin-Catalog" --help
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" \
+            "dist/LoL-Skin-Catalog-macOS.zip#LoL-Skin-Catalog.zip (macOS)" \
+            --clobber
+
+      - name: Keep the package as an artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoL-Skin-Catalog-macOS
+          path: dist/LoL-Skin-Catalog-macOS.zip

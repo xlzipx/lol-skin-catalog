@@ -1,5 +1,7 @@
 """
-Builds the standalone Windows executable and a ready-to-send ZIP.
+Builds the standalone executable for whichever platform it runs on, plus a
+ready-to-send ZIP. PyInstaller cannot cross-compile, so a macOS build has to
+be made on a Mac - the release workflow does that.
 
     pip install pyinstaller
     python build.py
@@ -7,6 +9,7 @@ Builds the standalone Windows executable and a ready-to-send ZIP.
 
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import zipfile
@@ -16,12 +19,19 @@ DIST = os.path.join(HERE, "dist")
 WORK = os.path.join(HERE, "build")
 NAME = "LoL-Skin-Catalog"
 
+WINDOWS = os.name == "nt"
+PLATFORM = "Windows" if WINDOWS else ("macOS" if sys.platform == "darwin" else "Linux")
+BINARY = NAME + (".exe" if WINDOWS else "")
+ARCHIVE = NAME + ("" if WINDOWS else f"-{PLATFORM}") + ".zip"
+
 # what goes into the "no-exe" fallback folder inside the ZIP
 SOURCE_FILES = ["main.py", "requirements.txt", "README.md", "README.cs.md", "LICENSE"]
 
 
 def make_icon():
-    """icon.png -> icon.ico (PyInstaller needs .ico on Windows)."""
+    """icon.png -> icon.ico. Only Windows needs it; macOS wants .icns."""
+    if not WINDOWS:
+        return None
     png = os.path.join(HERE, "icon.png")
     ico = os.path.join(HERE, "icon.ico")
     if not os.path.exists(png):
@@ -58,7 +68,7 @@ def build_exe(icon):
     if result.returncode != 0:
         sys.exit("PyInstaller failed.")
 
-    exe = os.path.join(DIST, NAME + ".exe")
+    exe = os.path.join(DIST, BINARY)
     print(f"Built {exe} ({os.path.getsize(exe) / 1048576:.1f} MB)")
     return exe
 
@@ -79,14 +89,24 @@ def make_zip(exe):
             shutil.copy(os.path.join(HERE, "lolskins", name),
                         os.path.join(staging, "no-exe", "lolskins"))
 
-    archive = os.path.join(DIST, NAME + ".zip")
+    archive = os.path.join(DIST, ARCHIVE)
     if os.path.exists(archive):
         os.remove(archive)
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for root, _, files in os.walk(staging):
             for name in files:
                 path = os.path.join(root, name)
-                z.write(path, os.path.relpath(path, staging))
+                arcname = os.path.relpath(path, staging)
+                if name == BINARY and not WINDOWS:
+                    # zipfile drops the mode, and a binary without the execute
+                    # bit is useless once unzipped
+                    info = zipfile.ZipInfo.from_file(path, arcname)
+                    info.compress_type = zipfile.ZIP_DEFLATED
+                    info.external_attr = (stat.S_IFREG | 0o755) << 16
+                    with open(path, "rb") as f:
+                        z.writestr(info, f.read())
+                else:
+                    z.write(path, arcname)
 
     print(f"Packaged {archive} ({os.path.getsize(archive) / 1048576:.1f} MB)")
     return archive

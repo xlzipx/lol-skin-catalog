@@ -4,6 +4,22 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] — 2026-07-28
+
+### Added
+
+- **A macOS package.** PyInstaller cannot cross-compile, so pushing a version
+  tag now builds the Mac binary on a macOS runner, checks that it starts, and
+  attaches it to that release. Windows keeps its own package as before.
+- `build.py` names its output after the platform it ran on and keeps the
+  execute bit on the binary inside the ZIP, which plain zipping drops.
+
+### Changed
+
+- macOS is documented as tested rather than assumed. Client discovery through
+  the running process, the serif headings and opening the finished PDF were all
+  confirmed on a Mac.
+
 ## [1.10.1] — 2026-07-28
 
 ### Fixed
@@ -266,6 +282,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.11.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.0
 [1.10.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.10.1
 [1.10.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.10.0
 [1.9.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.9.0

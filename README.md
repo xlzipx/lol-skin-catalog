@@ -28,10 +28,11 @@ the file, so you can send either one to a friend and it opens anywhere.
 
 ## Requirements
 
-- Windows or macOS with League of Legends installed. Windows is what the
-  released executable targets and what gets tested; on macOS run it from
-  source. Linux has no native League client, so the client cannot be found
-  automatically there — the rest of the tool runs fine.
+- Windows or macOS with League of Legends installed. Both are tested: the
+  client is found through its running process either way, and the headings
+  keep their serif face on both. Linux has no native League client, so the
+  client cannot be discovered automatically there — pass `--lockfile` and the
+  rest of the tool runs fine.
 - The League client **running and logged in** (the lobby is enough — you do not
   have to play)
 - Python 3.9+ if you run from source; the prebuilt `.exe` needs nothing else
