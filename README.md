@@ -41,8 +41,26 @@ the file, so you can send either one to a friend and it opens anywhere.
 
 ### Prebuilt executable
 
-Download the release, unzip it, start the League client, then double-click
-`LoL-Skin-Catalog.exe`. Results are written next to the executable.
+Download the release for your system, unzip it, start the League client, then
+run the program. Results are written next to it.
+
+Neither build is signed with a paid certificate, so each system objects once.
+
+**Windows** shows a SmartScreen panel: choose *More info* → *Run anyway*.
+
+**macOS** refuses to open it, saying Apple could not verify the developer. That
+is about notarisation, which needs a paid Apple developer account — not about
+anything being wrong with the download. Allow it once, either way:
+
+- Try to open the program, dismiss the warning, then go to *System Settings* →
+  *Privacy & Security*, scroll down, and press **Open Anyway** next to the
+  blocked program.
+- Or, in Terminal from the unzipped folder:
+  `xattr -dr com.apple.quarantine ./LoL-Skin-Catalog`
+
+Right-clicking and choosing *Open* no longer works — Apple removed that
+shortcut — and a launcher script does not help either, because macOS blocks
+downloaded scripts the same way.
 
 ### From source
 

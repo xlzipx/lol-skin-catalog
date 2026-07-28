@@ -4,16 +4,23 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.3] — 2026-07-28
+
+### Removed
+
+- The `Start on macOS.command` launcher added in 1.11.2. It was supposed to
+  slip past Gatekeeper on the assumption that macOS treats downloaded scripts
+  more leniently than compiled binaries. It does not — testing on a Mac gave
+  the same refusal for the script as for the program.
+
+### Changed
+
+- The macOS instructions say what actually works, in the README and in the
+  note shipped with the package: allow the program once through System
+  Settings → Privacy & Security → Open Anyway, or clear the quarantine flag
+  with `xattr`. Both dead ends are named so nobody retries them.
+
 ## [1.11.2] — 2026-07-28
-
-### Added
-
-- `Start on macOS.command` in the macOS package. Finder runs a script in
-  Terminal on double-click, and scripts are not held to notarisation the way a
-  compiled binary is, so the launcher gets through where the binary is blocked.
-  It clears the quarantine flag macOS puts on downloaded files, then starts the
-  program. Signing would not have helped: PyInstaller already ad-hoc signs the
-  binary, and the block is about notarisation rather than a missing signature.
 
 ### Fixed
 
@@ -312,6 +319,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.11.3]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.3
 [1.11.2]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.2
 [1.11.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.1
 [1.11.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.0

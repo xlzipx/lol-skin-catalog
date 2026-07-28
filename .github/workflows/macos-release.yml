@@ -41,15 +41,13 @@ jobs:
       - name: Build
         run: python build.py
 
-      - name: Check the binary and the launcher
+      - name: Check the binary actually starts
         run: |
           unzip -q dist/LoL-Skin-Catalog-macOS.zip -d /tmp/check
           # unzip honours the stored mode, so this also proves the execute bit
           # survived packaging rather than being restored by hand here
           test -x "/tmp/check/LoL-Skin-Catalog" || { echo "binary not executable"; exit 1; }
-          test -x "/tmp/check/Start on macOS.command" || { echo "launcher not executable"; exit 1; }
           "/tmp/check/LoL-Skin-Catalog" --help
-          bash -n "/tmp/check/Start on macOS.command"
 
       - name: Attach to the release
         env:

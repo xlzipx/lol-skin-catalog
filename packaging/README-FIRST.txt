@@ -51,38 +51,34 @@ WHAT YOU GET (next to the .exe)
 ON A MAC
 -----------------------------------------------------------
 
-  Double-click "Start on macOS.command". Terminal opens and
-  the program runs. If macOS asks whether you are sure you
-  want to open a downloaded script, say yes.
+  The program is called just "LoL-Skin-Catalog", with no
+  .exe on the end.
 
-  That launcher clears the quarantine flag macOS puts on
-  anything downloaded, then starts the program. It is doing
-  by itself what you would otherwise type in Terminal.
+  The first time, macOS refuses to open it and says Apple
+  could not verify it. Nothing is wrong with the download.
+  The program is not notarised, which needs a paid Apple
+  developer account, and macOS blocks anything unnotarised
+  that came from the internet.
 
-  The program itself is called "LoL-Skin-Catalog", with no
-  .exe on the end. Opening it directly does not work: macOS
-  refuses and says Apple could not verify it. Nothing is
-  wrong with the download - it simply is not notarised,
-  which needs a paid Apple developer account.
+  You have to allow it once. Either way works:
 
-  If the launcher does not work either, allow the program
-  by hand, once:
+  A) Without the Terminal
+     1. Try to open the program, then dismiss the warning.
+     2. Open System Settings > Privacy & Security.
+     3. Scroll down. There is a line saying LoL-Skin-Catalog
+        was blocked, with an "Open Anyway" button.
+     4. Click it and confirm with your password.
 
-    1. Try to open it, then dismiss the warning.
-    2. Open System Settings > Privacy & Security.
-    3. Scroll down. There is a line saying LoL-Skin-Catalog
-       was blocked, with an "Open Anyway" button.
-    4. Click it and confirm with your password.
+  B) In the Terminal, from the unzipped folder
+        xattr -dr com.apple.quarantine ./LoL-Skin-Catalog
+        ./LoL-Skin-Catalog
 
   After that it starts normally and never asks again.
 
-  If you would rather use the Terminal, this does the same:
-
-    xattr -dr com.apple.quarantine ./LoL-Skin-Catalog
-
-  Note: on recent macOS versions, right-clicking and
-  choosing Open no longer works for this - Apple removed
-  that shortcut.
+  Two things that do NOT work, so do not waste time on them:
+  right-clicking and choosing Open (Apple removed that
+  shortcut), and double-clicking a launcher script (macOS
+  blocks downloaded scripts the same way).
 
 
 WINDOWS MAY WARN YOU
