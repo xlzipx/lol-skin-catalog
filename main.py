@@ -232,6 +232,8 @@ def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
     readable = {k or "No tier": v for k, v in tier_counts.items()}
     print("Rarities: " + json.dumps(readable))
 
+    assets.ensure_cache_version(out)
+
     keep_full = "splashes" in formats
     need_thumbs = bool(formats & {"pdf", "xlsx"})
     icon = None

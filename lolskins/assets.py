@@ -5,6 +5,7 @@ community-run mirror of the game's own asset files. No login involved.
 
 import io
 import os
+import shutil
 
 import requests
 from PIL import Image
@@ -62,6 +63,81 @@ CATALOGS = {
     "icons": ("/v1/summoner-icons.json", "title", "imagePath"),
     "wards": ("/v1/ward-skins.json", "name", "wardImagePath"),
 }
+
+
+# Raise this whenever cached artwork would come out different than before.
+# The width check alone cannot notice a change in how an image is processed,
+# so without a stamp an old cache would quietly hide the improvement.
+CACHE_VERSION = 2
+
+
+def ensure_cache_version(base=None, log=print):
+    """Drops the cache when the way artwork is produced has changed."""
+    folder = thumb_dir(base)
+    stamp = os.path.join(folder, "cache-version.txt")
+    current = None
+    if os.path.exists(stamp):
+        try:
+            with open(stamp, encoding="utf-8") as f:
+                current = int(f.read().strip())
+        except Exception:
+            current = None
+
+    if current != CACHE_VERSION:
+        if current is not None:
+            log("Artwork handling changed since the last run; fetching it again.")
+        for name in os.listdir(folder):
+            path = os.path.join(folder, name)
+            try:
+                shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
+            except Exception:
+                pass
+        with open(stamp, "w", encoding="utf-8") as f:
+            f.write(str(CACHE_VERSION))
+
+
+def _on_panel(img):
+    """Flattens artwork onto the card colour, transparent or not.
+
+    Some ward art ships as plain RGB with the black backdrop baked in. Those
+    get the backdrop keyed out by flooding inwards from the corners, which
+    leaves dark areas inside the ward alone - a plain brightness threshold
+    would punch holes in them.
+    """
+    from PIL import ImageDraw, ImageFilter
+
+    if img.mode in ("RGBA", "LA", "P"):
+        rgba = img.convert("RGBA")
+        alpha = rgba.getchannel("A")
+        if alpha.getextrema()[0] < 250:      # genuinely transparent somewhere
+            flat = Image.new("RGB", rgba.size, PANEL_RGB)
+            flat.paste(rgba, mask=alpha)
+            return flat
+        img = rgba
+
+    rgb = img.convert("RGB")
+    corners = [(0, 0), (rgb.width - 1, 0), (0, rgb.height - 1),
+               (rgb.width - 1, rgb.height - 1)]
+    if not any(sum(rgb.getpixel(p)) < 60 for p in corners):
+        return rgb                            # nothing dark to key out
+
+    SENTINEL = (255, 0, 255)
+    work = rgb.copy()
+    for corner in corners:
+        if sum(work.getpixel(corner)) < 60:
+            ImageDraw.floodfill(work, corner, SENTINEL, thresh=45)
+
+    mask = Image.new("L", rgb.size, 255)
+    source, target = work.load(), mask.load()
+    for y in range(rgb.height):
+        for x in range(rgb.width):
+            if source[x, y] == SENTINEL:
+                target[x, y] = 0
+    mask = mask.filter(ImageFilter.GaussianBlur(0.6))
+
+    flat = Image.new("RGB", rgb.size, PANEL_RGB)
+    flat.paste(rgb, mask=mask)
+    return flat
 
 
 def fetch_gem_icons(base=None, log=print):
@@ -139,14 +215,7 @@ def download_collectibles(items, kind, base=None, log=print):
             if r.status_code != 200:
                 item["thumb"] = None
                 continue
-            img = Image.open(io.BytesIO(r.content))
-            if img.mode in ("RGBA", "LA", "P"):
-                img = img.convert("RGBA")
-                flat = Image.new("RGB", img.size, PANEL_RGB)
-                flat.paste(img, mask=img.split()[-1])
-                img = flat
-            else:
-                img = img.convert("RGB")
+            img = _on_panel(Image.open(io.BytesIO(r.content)))
             height = max(1, round(img.height * width / img.width))
             img.resize((width, height), Image.LANCZOS).save(
                 item["thumb"], "JPEG", quality=88

@@ -4,6 +4,23 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.12.2] — 2026-07-28
+
+### Fixed
+
+- Nine ward skins sat on a black square instead of the card colour. Riot ships
+  those nine as plain RGB with the backdrop baked in, while the other
+  twenty-six carry real transparency. The baked backdrop is now keyed out by
+  flooding inwards from the corners, which leaves dark areas inside the ward
+  alone — a brightness threshold would have punched holes in them.
+
+### Added
+
+- The artwork cache carries a version stamp. Until now a change in how images
+  are processed went unnoticed, because the cache only checked image width, so
+  a fix like the one above would never have reached anyone with art already on
+  disk. A mismatch now refetches once, by itself.
+
 ## [1.12.1] — 2026-07-28
 
 ### Fixed
@@ -351,6 +368,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.12.2]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.2
 [1.12.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.1
 [1.12.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.0
 [1.11.3]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.3
