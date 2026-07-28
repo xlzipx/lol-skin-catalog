@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.1] — 2026-07-28
+
+### Fixed
+
+- The macOS package never got built. `build.py` staged the ZIP in a folder
+  named after the program, and off Windows the binary has no extension, so the
+  folder collided with the executable beside it. Windows never hit it because
+  of the `.exe`. The staging folder has its own name now.
+- The macOS workflow can be re-run by hand against a given tag, so a packaging
+  failure no longer needs a fresh version to retry.
+
 ## [1.11.0] — 2026-07-28
 
 ### Added
@@ -282,6 +293,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.11.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.1
 [1.11.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.0
 [1.10.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.10.1
 [1.10.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.10.0

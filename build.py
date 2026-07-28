@@ -74,7 +74,9 @@ def build_exe(icon):
 
 
 def make_zip(exe):
-    staging = os.path.join(DIST, NAME)
+    # not NAME: off Windows the binary has no extension, so a folder of that
+    # name would collide with the executable sitting beside it
+    staging = os.path.join(DIST, NAME + "-package")
     shutil.rmtree(staging, ignore_errors=True)
     os.makedirs(os.path.join(staging, "no-exe", "lolskins"), exist_ok=True)
 

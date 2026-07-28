@@ -6,6 +6,10 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach to, e.g. v1.11.1"
+        required: true
 
 permissions:
   contents: write
@@ -17,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,11 +48,11 @@ jobs:
           "/tmp/check/LoL-Skin-Catalog" --help
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" \
+          gh release upload "$TAG" \
             "dist/LoL-Skin-Catalog-macOS.zip#LoL-Skin-Catalog.zip (macOS)" \
             --clobber
 
