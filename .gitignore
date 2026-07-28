@@ -11,6 +11,11 @@ profile.json
 splashes/
 .thumbs/
 
+# Riot artwork is downloaded at run time, never committed. This holds gems
+# exported from the client by hand; the tool fetches its own from Community
+# Dragon instead.
+gems/
+
 # personal data from older versions of this tool
 Skiny.pdf
 Skiny.xlsx

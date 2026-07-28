@@ -4,6 +4,23 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.12.0] — 2026-07-28
+
+### Changed
+
+- **The rarity gems are Riot's own artwork now**, fetched from Community
+  Dragon at run time like every other image, rather than shapes drawn to
+  resemble them. Riot only publishes gems for the six tiers the client shows;
+  the legacy Rare tier keeps a drawn one, resized to sit level with the rest.
+  The drawn set stays as a fallback if the download does not happen.
+- The cover strip lists Rare among the tiers again, with the untiered count on
+  its own line beneath.
+
+### Notes
+
+- No Riot artwork is committed or bundled: the gems are downloaded beside the
+  splash art and are ignored by git, the same as everything else.
+
 ## [1.11.3] — 2026-07-28
 
 ### Removed
@@ -319,6 +336,7 @@ First public release.
   endpoint returns an empty rarity field.
 - Chromas are counted only on real skins, matching the client's own tally.
 
+[1.12.0]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.12.0
 [1.11.3]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.3
 [1.11.2]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.2
 [1.11.1]: https://github.com/xlzipx/lol-skin-catalog/releases/tag/v1.11.1

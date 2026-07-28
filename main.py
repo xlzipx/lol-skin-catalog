@@ -264,9 +264,11 @@ def build_catalog(all_skins, profile, out, formats=None, collectibles=None):
                                                  "icons", out)
             wards = assets.download_collectibles(collectibles.get("wards", []),
                                                  "wards", out)
+        gems = assets.fetch_gem_icons(out)
         print("Writing PDF…")
         path = os.path.join(out, names["pdf"])
-        pdf.build(skins, profile, tier_counts, icon, path, icons=icons, wards=wards)
+        pdf.build(skins, profile, tier_counts, icon, path,
+                  icons=icons, wards=wards, gems=gems)
         written.append(path)
     if keep_full:
         written.append(paths.splash_dir(out))

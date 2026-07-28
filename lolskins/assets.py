@@ -10,7 +10,7 @@ import requests
 from PIL import Image
 
 from .paths import safe_filename, splash_dir, thumb_dir
-from .theme import RARITY_ENUM
+from .theme import RARITY_ENUM, TIERS
 
 CDRAGON = (
     "https://raw.communitydragon.org/latest/plugins"
@@ -62,6 +62,35 @@ CATALOGS = {
     "icons": ("/v1/summoner-icons.json", "title", "imagePath"),
     "wards": ("/v1/ward-skins.json", "name", "wardImagePath"),
 }
+
+
+def fetch_gem_icons(base=None, log=print):
+    """Riot's own rarity gems. Returns {tier: path}.
+
+    Only the six tiers the client actually shows have artwork; the legacy
+    "Rare" tier is in the data but has no gem, so it simply gets none here.
+    """
+    folder = os.path.join(thumb_dir(base), "gems")
+    os.makedirs(folder, exist_ok=True)
+    session = requests.Session()
+    found = {}
+
+    for tier in TIERS:
+        target = os.path.join(folder, f"{tier.lower()}.png")
+        if os.path.exists(target):
+            found[tier] = target
+            continue
+        try:
+            r = session.get(f"{CDRAGON}/v1/rarity-gem-icons/{tier.lower()}.png",
+                            timeout=30)
+            if r.status_code != 200:
+                continue
+            Image.open(io.BytesIO(r.content)).convert("RGBA").save(target)
+            found[tier] = target
+        except Exception as e:
+            log(f"Could not download the {tier} gem: {e}")
+
+    return found
 
 
 def fetch_catalog(kind, log=print):

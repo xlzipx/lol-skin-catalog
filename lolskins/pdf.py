@@ -48,7 +48,7 @@ def _thumb_ratio(skins, default=SPLASH_RATIO):
 # ---------------------------------------------------------------- cover ----
 
 
-def _cover(c, W, H, skins, profile, tier_counts, icon, contents=None):
+def _cover(c, W, H, skins, profile, tier_counts, icon, contents=None, gems=None):
     page_background(c, W, H)
     page_frame(c, W, H, 12 * mm)
 
@@ -100,19 +100,30 @@ def _cover(c, W, H, skins, profile, tier_counts, icon, contents=None):
     tracked_text(c, W / 2, y_circle - 9 * mm, "TOTAL SKINS", theme.FONT, 7.5, 2.2, "center")
     tracked_text(c, W / 2, y_circle - 13.5 * mm, "OWNED", theme.FONT, 7.5, 2.2, "center")
 
-    # rarity strip
+    # Rarity strip. Riot draws gems for the six tiers the client shows; the
+    # legacy Rare tier has real data but no artwork, so it keeps a drawn gem
+    # sized to sit alongside the others.
+    gems = gems or {}
+    shown = list(TIERS)
     y_gem = y_circle - r - 24 * mm
-    step = min(24 * mm, (W - 60 * mm) / max(1, len(TIERS)))
-    x0 = W / 2 - step * (len(TIERS) - 1) / 2
-    for i, tier in enumerate(TIERS):
+    step = min(24 * mm, (W - 60 * mm) / max(1, len(shown)))
+    x0 = W / 2 - step * (len(shown) - 1) / 2
+    for i, tier in enumerate(shown):
         x = x0 + i * step
-        draw_gem(c, tier, x, y_gem, 5 * mm)
+        draw_gem(c, tier, x, y_gem, 5 * mm, gems.get(tier))
         c.setFillColorRGB(*TEXT)
         c.setFont(theme.FONT_DISPLAY_BOLD, 16)
         c.drawCentredString(x, y_gem - 13 * mm, str(tier_counts.get(tier, 0)))
         c.setFillColorRGB(*TEXT_DIM)
         c.setFont(theme.FONT, 7.2)
         c.drawCentredString(x, y_gem - 19 * mm, tier.upper())
+
+    rest = [(t, tier_counts.get(t, 0)) for t in TIERS if t not in shown]
+    rest.append(("No tier", tier_counts.get("", 0)))
+    c.setFillColorRGB(*TEXT_DIM)
+    c.setFont(theme.FONT, 7)
+    c.drawCentredString(W / 2, y_gem - 25 * mm,
+                        "  ·  ".join(f"{name} {count}" for name, count in rest))
 
     # secondary stats
     y_rule = y_gem - 27 * mm
@@ -533,7 +544,8 @@ def _card_front(c, x, y_top, card_w, padding, img_w, img_h, tier):
 # ------------------------------------------------------------------ grid ----
 
 
-def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
+def build(skins, profile, tier_counts, icon, path, icons=None, wards=None,
+          gems=None):
     theme.register_fonts()
 
     W, H = A4
@@ -593,7 +605,7 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
     for idx, skin in enumerate(skins):
         champion_pages.setdefault(skin["champion"], 3 + idx // per_page)
 
-    _cover(c, W, H, skins, profile, tier_counts, icon, contents)
+    _cover(c, W, H, skins, profile, tier_counts, icon, contents, gems)
     _roster(c, W, H, margin, skins, name, total_pages, champion_pages)
 
     for idx, skin in enumerate(skins):
@@ -628,11 +640,14 @@ def build(skins, profile, tier_counts, icon, path, icons=None, wards=None):
         centre = x + card_w / 2
         art_bottom = y_top - padding - img_h
 
-        # the gem straddles the bottom edge of the art, as it does in game
+        # The gem straddles the bottom edge of the art, as it does in game.
+        # Once Riot's gems are in hand, a tier they do not draw gets none here
+        # either - only its colour on the card says what it is.
+        gem_art = (gems or {}).get(tier)
         if tier:
             c.setFillColorRGB(*_tinted(PANEL, TIER_COLOR[tier], 0.18))
             c.circle(centre, art_bottom, 2.5 * mm, fill=1, stroke=0)
-            draw_gem(c, tier, centre, art_bottom, 1.8 * mm)
+            draw_gem(c, tier, centre, art_bottom, 1.8 * mm, gem_art)
 
         text_w = card_w - 2 * padding
         c.setFillColorRGB(*TEXT)

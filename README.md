@@ -140,7 +140,12 @@ of the game's asset files. These are ordinary HTTPS downloads of public images
 
 Catalog cards use Riot's square tile art, which is framed on the champion by
 hand and ships at exactly the size the card needs. The wide splash is fetched
-only when you ask for the `splashes/` folder.
+only when you ask for the `splashes/` folder. The rarity gems come from there
+too — Riot publishes six of them, one per tier the client displays, so the
+legacy Rare tier is the only one still drawn by this tool.
+
+None of that artwork is stored in this repository or bundled into the
+executable; it is downloaded when you run the program and kept in the cache.
 
 The inventory endpoints hand back nothing but item ids, so the names and
 pictures for icons and wards are matched up from there, and rarity has to come

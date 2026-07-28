@@ -159,13 +159,34 @@ def _regular_polygon(cx, cy, r, sides, rotation=0.0):
     ]
 
 
-def draw_gem(c, tier, cx, cy, r):
-    """
-    Draws the rarity mark; the silhouette matches that tier in the client.
+_GEM_READERS = {}
 
-    Side counts follow the gems in game: Legendary has four, Mythic five and
+
+def draw_gem(c, tier, cx, cy, r, image=None):
+    """
+    Draws the rarity mark, preferring Riot's own gem art when it is available.
+
+    The drawn shapes stay as a fallback for when the download did not happen,
+    and follow the side counts of the real gems: Legendary four, Mythic five,
     Ultimate six.
     """
+    if image and os.path.exists(image):
+        try:
+            reader = _GEM_READERS.get(image)
+            if reader is None:
+                from reportlab.lib.utils import ImageReader
+
+                reader = ImageReader(image)
+                _GEM_READERS[image] = reader
+            width, height = reader.getSize()
+            w = 2 * r
+            h = w * height / width
+            c.drawImage(reader, cx - w / 2, cy - h / 2, width=w, height=h,
+                        mask="auto")
+            return
+        except Exception:
+            pass  # fall through to the drawn shape
+
     color = TIER_COLOR.get(tier)
     if not color:
         return
@@ -213,9 +234,13 @@ def draw_gem(c, tier, cx, cy, r):
         _polygon(c, [(cx, cy + r), (cx, cy - r * 0.72), (cx - r * 0.92, cy - r * 0.72)], light)
 
     elif tier == "Rare":
-        _polygon(c, [(cx, cy + r * 0.9), (cx + r * 0.75, cy),
-                     (cx, cy - r * 0.9), (cx - r * 0.75, cy)], color)
-        _polygon(c, [(cx, cy + r * 0.9), (cx + r * 0.75, cy), (cx, cy)], light)
+        # Riot ships no gem for this legacy tier, so it stays drawn. The box
+        # matches what their artwork occupies, roughly 2r wide by 1.9r tall,
+        # so it does not look undersized in the row.
+        _polygon(c, [(cx, cy + r * 0.95), (cx + r, cy),
+                     (cx, cy - r * 0.95), (cx - r, cy)], color)
+        _polygon(c, [(cx, cy + r * 0.95), (cx + r, cy), (cx, cy)], light)
+        _polygon(c, [(cx, cy - r * 0.95), (cx - r, cy), (cx, cy)], dark)
 
 
 def diamond(c, cx, cy, r, color, filled=True):
