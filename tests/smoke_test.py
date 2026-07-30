@@ -209,9 +209,11 @@ def test_duplicate_champion_sets():
     names = [(s["champion"], s["skin"]) for s in skins]
 
     check("nothing is listed twice", len(names) == len(set(names)), names)
-    check("the copies are counted", stats["duplicates"] == 2, stats["duplicates"])
-    check("a Classic-only skin survives", ("Annie", "Classic Annie") in names)
-    check("every distinct skin is kept", len(names) == 6, len(names))
+    check("the whole repeated entry is counted",
+          stats["duplicates"] == 3, stats["duplicates"])
+    check("the default look of the second set is left out",
+          ("Annie", "Classic Annie") not in names, names)
+    check("every skin of the live champion is kept", len(names) == 5, len(names))
     check("the live skin id is the one kept",
           next(s["skinId"] for s in skins if s["skin"] == "Frostfire Annie") == 1001)
     check("champions are counted once",

@@ -185,25 +185,32 @@ def collect_skins(champions):
     A champion can turn up more than once. League of Legends Classic ships the
     old models as a second set of champion entries (alias 'Jade_...', ids offset
     by 60000) that carries most of the same skins over again, so listing the
-    payload as it arrives shows those skins twice. The pair is collapsed on
-    champion and skin name; skins that exist only in Classic have names of their
-    own ('Classic Ahri') and are kept. Champions are walked in id order, which
-    puts a live entry ahead of its copy - so the surviving skin id is the one
-    Community Dragon publishes a rarity and artwork for.
+    payload as it arrives shows those skins twice. Only the first entry for a
+    champion is read, and champions are walked in id order, so the one that
+    survives is the live champion - the ids Community Dragon publishes a rarity
+    and artwork for.
+
+    Dropping the whole entry also leaves out the models the second set adds of
+    its own ('Classic Ahri'). They are the default look of a champion in that
+    mode, handed to everyone rather than bought, which is the same reason base
+    skins never appear in the catalog.
     """
     skins = []
     seen = set()
     stats = {"duplicates": 0, "chromasOwned": 0, "skinsWithChroma": 0}
 
     for champion in sorted(champions, key=lambda c: c.get("id") or 0):
+        name = champion.get("name") or ""
+        if name in seen:
+            stats["duplicates"] += sum(
+                1 for skin in champion.get("skins") or []
+                if (skin.get("ownership") or {}).get("owned")
+            )
+            continue
+        seen.add(name)
         for skin in champion.get("skins") or []:
             if not (skin.get("ownership") or {}).get("owned"):
                 continue
-            key = (champion.get("name") or "", skin.get("name") or "")
-            if key in seen:
-                stats["duplicates"] += 1
-                continue
-            seen.add(key)
             is_base = bool(skin.get("isBase"))
             skins.append({
                 "champion": champion["name"],
@@ -248,8 +255,8 @@ def fetch_inventory(lockfile=None, log=print):
     log(f"Owned skins (including base): {len(skins)}")
     log(f"Real skins (base excluded): {sum(1 for s_ in skins if not s_['isBase'])}")
     if stats["duplicates"]:
-        log(f"Listed once instead of twice: {stats['duplicates']} skins the "
-            "client also carries in a second champion set")
+        log(f"Left out: {stats['duplicates']} entries from a repeated champion "
+            "set (League of Legends Classic and the like)")
 
     profile = {
         "gameName": me.get("gameName") or me.get("displayName") or "",

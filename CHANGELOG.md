@@ -4,6 +4,18 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.13.1] — 2026-07-30
+
+### Fixed
+
+- The catalog listed the thirty-odd `Classic …` models that League of Legends
+  Classic adds — `Classic Ahri`, `Classic 2012 Kayle` and the rest. They are the
+  default look of a champion in that mode, granted to everyone rather than
+  bought, so they belong out of the catalog for the same reason base skins do.
+  The client marks them owned like anything else; the giveaway is that a whole
+  champion entry is repeated, so the repeat is now skipped outright rather than
+  being merged skin by skin.
+
 ## [1.13.0] — 2026-07-30
 
 ### Fixed
