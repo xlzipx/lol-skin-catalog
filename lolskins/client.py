@@ -179,25 +179,31 @@ def connect(lockfile=None, log=print):
     return _session(parts[2], parts[3], parts[4])
 
 
-def fetch_inventory(lockfile=None, log=print):
-    """Reads owned skins and profile info. Returns (skins, profile)."""
-    s, base = connect(lockfile, log=log)
+def collect_skins(champions):
+    """Owned skins out of the champions payload. Returns (skins, stats).
 
-    me = s.get(f"{base}/lol-summoner/v1/current-summoner").json()
-    log(f"Logged in as: {me.get('gameName') or me.get('displayName')}")
-
-    champions = s.get(
-        f"{base}/lol-champions/v1/inventories/{me['summonerId']}/champions"
-    ).json()
-
+    A champion can turn up more than once. League of Legends Classic ships the
+    old models as a second set of champion entries (alias 'Jade_...', ids offset
+    by 60000) that carries most of the same skins over again, so listing the
+    payload as it arrives shows those skins twice. The pair is collapsed on
+    champion and skin name; skins that exist only in Classic have names of their
+    own ('Classic Ahri') and are kept. Champions are walked in id order, which
+    puts a live entry ahead of its copy - so the surviving skin id is the one
+    Community Dragon publishes a rarity and artwork for.
+    """
     skins = []
-    chromas_total = 0
-    chromas_on_skins = 0
+    seen = set()
+    stats = {"duplicates": 0, "chromasOwned": 0, "skinsWithChroma": 0}
 
-    for champion in champions:
-        for skin in champion.get("skins", []):
+    for champion in sorted(champions, key=lambda c: c.get("id") or 0):
+        for skin in champion.get("skins") or []:
             if not (skin.get("ownership") or {}).get("owned"):
                 continue
+            key = (champion.get("name") or "", skin.get("name") or "")
+            if key in seen:
+                stats["duplicates"] += 1
+                continue
+            seen.add(key)
             is_base = bool(skin.get("isBase"))
             skins.append({
                 "champion": champion["name"],
@@ -214,24 +220,45 @@ def fetch_inventory(lockfile=None, log=print):
                 1 for ch in (skin.get("chromas") or [])
                 if (ch.get("ownership") or {}).get("owned")
             )
-            chromas_total += owned
+            stats["chromasOwned"] += owned
             if owned:
-                chromas_on_skins += 1
+                stats["skinsWithChroma"] += 1
 
     skins.sort(key=lambda x: (x["champion"].lower(), x["skin"].lower()))
+    # by name for the same reason: the two sets describe one champion
+    stats["championsOwned"] = len({
+        champion.get("name") for champion in champions
+        if (champion.get("ownership") or {}).get("owned")
+    })
+    return skins, stats
+
+
+def fetch_inventory(lockfile=None, log=print):
+    """Reads owned skins and profile info. Returns (skins, profile)."""
+    s, base = connect(lockfile, log=log)
+
+    me = s.get(f"{base}/lol-summoner/v1/current-summoner").json()
+    log(f"Logged in as: {me.get('gameName') or me.get('displayName')}")
+
+    champions = s.get(
+        f"{base}/lol-champions/v1/inventories/{me['summonerId']}/champions"
+    ).json()
+
+    skins, stats = collect_skins(champions)
     log(f"Owned skins (including base): {len(skins)}")
     log(f"Real skins (base excluded): {sum(1 for s_ in skins if not s_['isBase'])}")
+    if stats["duplicates"]:
+        log(f"Listed once instead of twice: {stats['duplicates']} skins the "
+            "client also carries in a second champion set")
 
     profile = {
         "gameName": me.get("gameName") or me.get("displayName") or "",
         "tagLine": me.get("tagLine") or "",
         "level": me.get("summonerLevel") or 0,
         "profileIconId": me.get("profileIconId") or 0,
-        "championsOwned": sum(
-            1 for c in champions if (c.get("ownership") or {}).get("owned")
-        ),
-        "chromasOwned": chromas_total,
-        "skinsWithChroma": chromas_on_skins,
+        "championsOwned": stats["championsOwned"],
+        "chromasOwned": stats["chromasOwned"],
+        "skinsWithChroma": stats["skinsWithChroma"],
     }
     return skins, profile
 

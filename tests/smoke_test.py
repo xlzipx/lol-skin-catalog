@@ -171,6 +171,59 @@ def test_cache_freshness():
         check("matching width is reused", assets._is_current(path, 220))
 
 
+def _champion(champ_id, name, alias, skin_names, owned=True):
+    """One entry of the client's champions payload."""
+    ownership = {"owned": owned}
+    return {
+        "id": champ_id,
+        "name": name,
+        "alias": alias,
+        "ownership": ownership,
+        "skins": [
+            {
+                "id": champ_id * 1000 + i,
+                "name": skin_name,
+                "isBase": i == 0,
+                "splashPath": "/splash.jpg",
+                "tilePath": "/tile.jpg",
+                "chromas": [{"ownership": {"owned": True}}] if i == 1 else [],
+                "ownership": ownership,
+            }
+            for i, skin_name in enumerate(skin_names)
+        ],
+    }
+
+
+def test_duplicate_champion_sets():
+    """League of Legends Classic repeats a champion's skins in a second set."""
+    print("duplicate champion sets")
+    from lolskins import client
+
+    payload = [
+        _champion(1, "Annie", "Annie", ["Annie", "Frostfire Annie", "Goth Annie"]),
+        _champion(60001, "Annie", "Jade_Annie",
+                  ["Annie", "Frostfire Annie", "Classic Annie"]),
+        _champion(17, "Teemo", "Teemo", ["Teemo", "Astronaut Teemo"]),
+    ]
+    skins, stats = client.collect_skins(payload)
+    names = [(s["champion"], s["skin"]) for s in skins]
+
+    check("nothing is listed twice", len(names) == len(set(names)), names)
+    check("the copies are counted", stats["duplicates"] == 2, stats["duplicates"])
+    check("a Classic-only skin survives", ("Annie", "Classic Annie") in names)
+    check("every distinct skin is kept", len(names) == 6, len(names))
+    check("the live skin id is the one kept",
+          next(s["skinId"] for s in skins if s["skin"] == "Frostfire Annie") == 1001)
+    check("champions are counted once",
+          stats["championsOwned"] == 2, stats["championsOwned"])
+    check("chromas are not counted twice",
+          stats["chromasOwned"] == 2 and stats["skinsWithChroma"] == 2, stats)
+
+    unowned = [_champion(2, "Olaf", "Olaf", ["Olaf", "Brolaf"], owned=False)]
+    empty, _ = client.collect_skins(unowned)
+    check("skins nobody owns stay out", empty == [], empty)
+
+
 def fake_collectibles(count, kind):
     years = ["2026", "2025", "2024", "2023", "UNDATED"]
     return [
@@ -409,7 +462,8 @@ def test_english_only():
 if __name__ == "__main__":
     for test in (test_imports, test_chroma_label, test_gems, test_outputs,
                  test_large_collection_fits, test_format_selection,
-                 test_cache_freshness, test_grid_planning, test_date_order,
+                 test_cache_freshness, test_duplicate_champion_sets,
+                 test_grid_planning, test_date_order,
                  test_collection_sections, test_internal_links,
                  test_nothing_falls_off_the_page, test_output_names,
                  test_page_numbering, test_english_only):

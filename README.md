@@ -181,9 +181,14 @@ convenient, not because anyone promised it is blessed.
 - **Base skins are excluded.** The client reports every champion's default look
   as an "owned skin", which is why its raw count is much higher than the number
   of skins you actually bought.
-- **Rarity tiers** map to the client's gems: Exalted, Transcendent, Ultimate,
+- **Rarity tiers** map to the client's gems: Transcendent, Exalted, Ultimate,
   Mythic, Legendary, Epic. `Rare` is the old 975 RP tier, which the client's own
   summary no longer displays — this catalog still lists it.
+- **A skin is listed once, even when the client offers it twice.** League of
+  Legends Classic ships the old models as a second set of champion entries, and
+  most of your skins come back a second time with it. Those copies are collapsed
+  on champion and skin name. Skins that exist only in Classic have names of
+  their own, so they are kept.
 - **Chromas** are counted only on real skins, matching the client's own tally.
 - **Icons and wards** are counted the way the client counts them, which includes
   a few starter icons carrying no purchase date and the free default ward. They

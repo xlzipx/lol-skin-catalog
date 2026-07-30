@@ -4,6 +4,21 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] — 2026-07-30
+
+### Fixed
+
+- Most skins were listed and counted twice. Today's League of Legends Classic
+  release ships the old models as a second set of champion entries (alias
+  `Jade_…`, ids offset by 60000) that carries the same skins over again, and
+  the client hands both sets over as owned. Skins are now collapsed on champion
+  and skin name, and champions are counted by name for the same reason. Walking
+  the payload in id order keeps the live entry, so the surviving skin id is the
+  one Community Dragon publishes a rarity and artwork for.
+- The skins that exist only in Classic — `Classic Ahri`, `Classic 2012 Kayle`
+  and the rest — have names of their own and are kept, so nothing owned is lost.
+  Summoner icons and ward skins were never affected.
+
 ## [1.12.2] — 2026-07-28
 
 ### Fixed
