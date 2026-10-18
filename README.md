@@ -7,6 +7,28 @@ also go out as an Excel sheet with thumbnails and a plain CSV list.
 
 ---
 
+## What it looks like
+
+<p align="center">
+  <img src="preview/cover.png" width="560" alt="Cover page: profile icon, summoner name, 274 skins owned and a gem for each rarity tier">
+</p>
+
+The cover takes your profile icon, name and level from the client, counts your
+skins by rarity, and closes with a table of contents whose entries link into the
+rest of the document.
+
+![Champion roster beside a page of skin cards](preview/skins.jpg)
+
+Every champion you own is listed with the number of skins you have for them, and
+each row jumps to that champion's cards. The cards themselves hold Riot's square
+tile art, the rarity gem and the chroma count, framed in the colour of the tier.
+
+![Summoner icons beside ward skins](preview/collectibles.jpg)
+
+Summoner icons and ward skins close the catalog, newest acquisition first.
+
+---
+
 ## What you get
 
 Files carry your summoner name, so exports from two accounts sit side by side
@@ -146,6 +168,8 @@ legacy Rare tier is the only one still drawn by this tool.
 
 None of that artwork is stored in this repository or bundled into the
 executable; it is downloaded when you run the program and kept in the cache.
+The preview screenshots above are the one exception, and they are pictures of
+the finished catalog rather than Riot's files.
 
 The inventory endpoints hand back nothing but item ids, so the names and
 pictures for icons and wards are matched up from there, and rarity has to come
